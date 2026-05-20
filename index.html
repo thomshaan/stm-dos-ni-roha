@@ -102,7 +102,7 @@ button{font-family:inherit}
 
 /* ───────── Main ───────── */
 .main{display:flex;flex-direction:column;min-width:0}
-.topbar{background:var(--bg);position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:14px 28px;border-bottom:1px solid var(--line)}
+.topbar{background:var(--bg);position:sticky;top:0;z-index:55;display:flex;align-items:center;gap:14px;padding:14px 28px;border-bottom:1px solid var(--line)}
 .tb-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
 .tb-crumb{color:var(--muted);font-size:12.5px;letter-spacing:.02em}
 .tb-spacer{flex:1}
@@ -330,6 +330,18 @@ button{font-family:inherit}
 .mob-fab{display:none;position:fixed;bottom:22px;right:18px;z-index:35;width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 4px 22px rgba(184,105,74,.55);cursor:pointer;align-items:center;justify-content:center;transition:transform .12s,background .12s}
 .mob-fab:active{transform:scale(.9)}
 @media(max-width:768px){.mob-fab{display:flex}}
+/* responsive grid helpers */
+.gc-16-10{display:grid;grid-template-columns:1.6fr 1fr}
+.gc-13-10{display:grid;grid-template-columns:1.3fr 1fr}
+.gc-10-10{display:grid;grid-template-columns:1fr 1fr}
+.gc-260-1{display:grid;grid-template-columns:260px 1fr}
+.gc-4col{display:grid;grid-template-columns:repeat(4,1fr)}
+@media(max-width:768px){
+  .gc-16-10,.gc-13-10,.gc-10-10,.gc-260-1{grid-template-columns:1fr}
+  .gc-4col{grid-template-columns:repeat(2,1fr)}
+  .main{overflow-x:hidden}
+}
+@media(max-width:480px){.gc-4col{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -1290,7 +1302,7 @@ function Dashboard({ setRoute, currency }) {
         </div>
       </div>
 
-      <div className="grid" style={{gridTemplateColumns:"1.6fr 1fr",gap:20}}>
+      <div className="gc-16-10" style={{gap:20}}>
         <div className="card">
           <div className="card-hd">
             <div><h3>Setoran 12 Bulan Terakhir</h3><div className="muted" style={{fontSize:12}}>Total setoran per bulan</div></div>
@@ -1324,7 +1336,7 @@ function Dashboard({ setRoute, currency }) {
         </div>
       </div>
 
-      <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:20}}>
+      <div className="gc-13-10" style={{gap:20}}>
         <div className="card">
           <div className="card-hd">
             <div><h3>Pertumbuhan Saldo Tabungan</h3><div className="muted" style={{fontSize:12}}>Saldo berjalan 12 bulan terakhir</div></div>
@@ -1359,7 +1371,7 @@ function Dashboard({ setRoute, currency }) {
         </div>
       </div>
 
-      <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:20}}>
+      <div className="gc-10-10" style={{gap:20}}>
         <div className="card">
           <div className="card-hd">
             <div><h3>Setoran Terbaru</h3><div className="muted" style={{fontSize:12}}>6 transaksi terakhir</div></div>
@@ -1553,7 +1565,7 @@ function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
                <Icon name="plus" size={14}/> Catat Setoran
              </button>
            </>}>
-      <div className="grid" style={{gridTemplateColumns:"260px 1fr",gap:24,marginBottom:18}}>
+      <div className="gc-260-1" style={{gap:24,marginBottom:18}}>
         <div>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div style={{width:54,height:54,borderRadius:12,background:S.avatarColor(keluarga.kepala_keluarga),color:"#fff",display:"grid",placeItems:"center",fontSize:18,fontWeight:700}}>
@@ -1676,7 +1688,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const fmt = (v) => S.formatCurrency(v, currency);
 
   return (
-    <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:20,alignItems:"flex-start"}}>
+    <div className="gc-13-10" style={{gap:20,alignItems:"flex-start"}}>
       <div className="card">
         <div className="card-hd">
           <div>
@@ -1827,7 +1839,7 @@ function RekapBulanan({ currency }) {
             <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
           </div>
         </div>
-        <div className="card-pad" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,borderBottom:"1px solid var(--line)"}}>
+        <div className="gc-4col card-pad" style={{gap:14,borderBottom:"1px solid var(--line)"}}>
           <div><div className="stat-lbl">Total Masuk</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total)}</div></div>
           <div><div className="stat-lbl">Transaksi</div><div className="stat-val tab-num" style={{fontSize:22}}>{pays.length}</div></div>
           <div><div className="stat-lbl">Anggota Setor</div><div className="stat-val tab-num" style={{fontSize:22}}>{rows.length}</div></div>
@@ -1912,7 +1924,7 @@ function RekapTahunan({ currency }) {
             <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
           </div>
         </div>
-        <div className="card-pad" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,borderBottom:"1px solid var(--line)"}}>
+        <div className="gc-4col card-pad" style={{gap:14,borderBottom:"1px solid var(--line)"}}>
           <div><div className="stat-lbl">Total {tahun}</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total)}</div></div>
           <div><div className="stat-lbl">Rata-rata Bulanan</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total/Math.max(1,perBulan.filter(v=>v>0).length))}</div></div>
           <div>
@@ -2276,7 +2288,7 @@ function PrintPreview({ currency }) {
               <div>Periode: {S.BULAN_ID_FULL[bulan-1]} {tahun}</div>
             </div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginTop:20,fontSize:11}}>
+          <div className="gc-4col" style={{gap:14,marginTop:20,fontSize:11}}>
             {[["Total Setor",fmt(total)],["Transaksi",pays.length],["Anggota Setor",rows.length],["Rata-rata",fmt(rows.length?total/rows.length:0)]].map(([l,v])=>(
               <div key={l} style={{padding:"10px 12px",background:"#f6efe1",borderRadius:6}}>
                 <div style={{color:"#777",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600,fontSize:10}}>{l}</div>
