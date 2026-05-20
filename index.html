@@ -1,0 +1,2484 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>STM Dos Ni Roha — Sistem Tabungan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+/* STM Dos Ni Roha — warm community admin */
+:root{
+  --bg: #f6efe1;
+  --bg-2: #faf5e9;
+  --surface: #ffffff;
+  --surface-2: #fbf6ea;
+  --sidebar: #2a1d12;
+  --sidebar-2: #3a281a;
+  --sidebar-fg: #f0e3c6;
+  --sidebar-muted: #b09c79;
+  --ink: #2a1d12;
+  --ink-2: #4a3a28;
+  --muted: #8a7659;
+  --line: #e6d9bd;
+  --line-2: #efe4ca;
+  --accent: #b8694a;
+  --accent-2: #9a5638;
+  --accent-soft: #f2d9c8;
+  --success: #6f8a3f;
+  --success-soft: #e3ead0;
+  --warning: #c8893a;
+  --warning-soft: #f5e3c1;
+  --danger: #a64b3a;
+  --danger-soft: #f3d4c8;
+  --info: #4a6f8a;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 2px rgba(74,58,40,.06), 0 1px 1px rgba(74,58,40,.04);
+  --shadow: 0 1px 2px rgba(74,58,40,.06), 0 6px 24px -8px rgba(74,58,40,.16);
+  --font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --row-py: 14px;
+  --row-px: 16px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+button{font-family:inherit}
+
+/* ───────── Shell ───────── */
+.app{display:grid;grid-template-columns:var(--sidebar-w,248px) 1fr;min-height:100vh;transition:grid-template-columns .25s cubic-bezier(.3,.7,.4,1)}
+.app[data-sidebar="collapsed"]{--sidebar-w:72px}
+.app[data-sidebar="iconOnly"]{--sidebar-w:72px}
+
+.sidebar{background:var(--sidebar);color:var(--sidebar-fg);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow:hidden}
+.sb-brand{display:flex;align-items:center;gap:12px;padding:6px 8px 18px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:10px}
+.sb-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#d88a6c);display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.sb-name{font-weight:700;font-size:13.5px;letter-spacing:.01em;white-space:nowrap}
+.sb-sub{font-size:11px;color:var(--sidebar-muted);white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+.sb-section{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--sidebar-muted);padding:14px 10px 6px}
+.sb-item{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:9px;cursor:pointer;color:var(--sidebar-fg);font-size:13.5px;font-weight:500;white-space:nowrap;transition:background .12s, color .12s;position:relative}
+.sb-item:hover{background:rgba(255,255,255,.05)}
+.sb-item[data-active="1"]{background:rgba(184,105,74,.18);color:#ffd9c6}
+.sb-item[data-active="1"]::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.sb-ico{width:18px;height:18px;flex-shrink:0;opacity:.85}
+.sb-label{flex:1;overflow:hidden;text-overflow:ellipsis}
+.sb-badge{background:rgba(255,255,255,.1);color:var(--sidebar-fg);font-size:10.5px;padding:2px 7px;border-radius:99px;font-weight:600;font-variant-numeric:tabular-nums}
+.sb-badge.warn{background:var(--danger);color:#fff}
+
+.sb-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;display:flex;align-items:center;gap:10px;padding-left:8px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:#7a4f37;display:grid;place-items:center;color:#f5ebd9;font-weight:600;font-size:12.5px;flex-shrink:0}
+.sb-user-name{font-size:12.5px;font-weight:600;color:var(--sidebar-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-role{font-size:10.5px;color:var(--sidebar-muted);white-space:nowrap}
+
+.app[data-sidebar="collapsed"] .sb-label,
+.app[data-sidebar="collapsed"] .sb-name,
+.app[data-sidebar="collapsed"] .sb-sub,
+.app[data-sidebar="collapsed"] .sb-section,
+.app[data-sidebar="collapsed"] .sb-badge,
+.app[data-sidebar="collapsed"] .sb-user-name,
+.app[data-sidebar="collapsed"] .sb-user-role,
+.app[data-sidebar="iconOnly"] .sb-label,
+.app[data-sidebar="iconOnly"] .sb-name,
+.app[data-sidebar="iconOnly"] .sb-sub,
+.app[data-sidebar="iconOnly"] .sb-section,
+.app[data-sidebar="iconOnly"] .sb-badge,
+.app[data-sidebar="iconOnly"] .sb-user-name,
+.app[data-sidebar="iconOnly"] .sb-user-role{display:none}
+.app[data-sidebar="collapsed"] .sb-item,
+.app[data-sidebar="iconOnly"] .sb-item{justify-content:center;padding:10px}
+.app[data-sidebar="collapsed"] .sb-brand,
+.app[data-sidebar="iconOnly"] .sb-brand{justify-content:center;padding:6px 0 14px}
+.app[data-sidebar="collapsed"] .sb-foot,
+.app[data-sidebar="iconOnly"] .sb-foot{padding-left:0;justify-content:center}
+
+/* ───────── Main ───────── */
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--bg);position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:14px 28px;border-bottom:1px solid var(--line)}
+.tb-title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.tb-crumb{color:var(--muted);font-size:12.5px;letter-spacing:.02em}
+.tb-spacer{flex:1}
+.tb-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 10px;width:280px;color:var(--muted)}
+.tb-search input{border:0;background:transparent;outline:none;font-family:inherit;font-size:13px;color:var(--ink);width:100%}
+.tb-search input::placeholder{color:var(--muted)}
+.tb-icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink-2);position:relative}
+.tb-icon-btn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.tb-icon-btn .dot{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg)}
+
+.content{padding:24px 28px 60px;min-height:calc(100vh - 64px)}
+
+/* ───────── Cards & layout ───────── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.card-pad{padding:20px}
+.card-hd{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.card-hd h3{margin:0;font-size:14.5px;font-weight:700;letter-spacing:-.005em}
+.card-hd .muted{color:var(--muted);font-size:12.5px}
+.card-hd-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.row{display:flex;align-items:center;gap:12px}
+.grid{display:grid;gap:16px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+@media (max-width:1180px){.grid-4{grid-template-columns:repeat(2,1fr)}}
+
+/* ───────── Stat cards ───────── */
+.stat{padding:18px 18px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+.stat-hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stat-lbl{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.stat-ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-2)}
+.stat-ico.green{background:var(--success-soft);color:var(--success)}
+.stat-ico.warn{background:var(--warning-soft);color:var(--warning)}
+.stat-ico.red{background:var(--danger-soft);color:var(--danger)}
+.stat-val{font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05}
+.stat-sub{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.stat-trend{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat-trend.up{background:var(--success-soft);color:var(--success)}
+.stat-trend.down{background:var(--danger-soft);color:var(--danger)}
+
+/* ───────── Buttons ───────── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;border:1px solid transparent;cursor:pointer;font-family:inherit;line-height:1;white-space:nowrap;transition:transform .06s, background .12s, border-color .12s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-2)}
+.btn-ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn-ghost:hover{background:var(--surface-2);border-color:var(--line-2)}
+.btn-sec{background:var(--surface);color:var(--ink-2);border-color:var(--line)}
+.btn-sec:hover{background:var(--surface-2)}
+.btn-dark{background:var(--sidebar);color:#fff;border-color:var(--sidebar)}
+.btn-dark:hover{background:var(--sidebar-2)}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn-icon{padding:8px;width:34px;height:34px;justify-content:center}
+
+/* ───────── Tables ───────── */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:12px var(--row-px);background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap;user-select:none}
+.tbl th[data-sortable]{cursor:pointer}
+.tbl th[data-sortable]:hover{color:var(--ink-2)}
+.tbl th .sort-ico{display:inline-block;margin-left:4px;opacity:.5}
+.tbl th[data-sort] .sort-ico{opacity:1;color:var(--accent)}
+.tbl td{padding:var(--row-py) var(--row-px);border-bottom:1px solid var(--line-2);vertical-align:middle;color:var(--ink-2)}
+.tbl tbody tr:hover{background:var(--surface-2)}
+.tbl tbody tr.clickable{cursor:pointer}
+.tbl-num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tbl-noborder tbody tr:last-child td{border-bottom:0}
+.app[data-density="compact"] .tbl{font-size:12.5px}
+.app[data-density="compact"]{--row-py:9px;--row-px:12px}
+.app[data-density="compact"] .tbl th{padding:9px 12px}
+
+.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;font-size:12.5px;flex-shrink:0;letter-spacing:.02em}
+.avatar.sm{width:26px;height:26px;font-size:11px}
+
+/* ───────── Badges ───────── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;letter-spacing:.01em;line-height:1.3;white-space:nowrap}
+.badge-green{background:var(--success-soft);color:var(--success)}
+.badge-red{background:var(--danger-soft);color:var(--danger)}
+.badge-warn{background:var(--warning-soft);color:var(--warning)}
+.badge-neutral{background:#ebe1c8;color:var(--ink-2)}
+.badge-accent{background:var(--accent-soft);color:var(--accent-2)}
+.badge-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+/* ───────── Charts ───────── */
+.chart-wrap{padding:16px 20px 18px}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-axis{font-size:10.5px;fill:var(--muted);font-family:var(--font);font-variant-numeric:tabular-nums}
+.chart-grid{stroke:var(--line-2);stroke-width:1;stroke-dasharray:2 4}
+.chart-bar{fill:var(--accent);transition:fill .15s}
+.chart-bar:hover{fill:var(--accent-2)}
+.chart-bar-soft{fill:var(--accent-soft)}
+.chart-line{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.chart-area{fill:url(#chartAreaFill)}
+.chart-dot{fill:#fff;stroke:var(--accent);stroke-width:2}
+.donut-track{fill:none;stroke:var(--line-2);stroke-width:18}
+.tooltip{position:absolute;background:var(--sidebar);color:#fff;font-size:11.5px;padding:6px 9px;border-radius:7px;pointer-events:none;white-space:nowrap;font-weight:500;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.tooltip b{font-weight:700}
+
+/* ───────── Pagination ───────── */
+.pager{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+.pager-pages{display:flex;gap:4px}
+.pager-pages button{min-width:30px;height:30px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink-2);cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:500}
+.pager-pages button:hover{background:var(--surface-2);border-color:var(--line-2)}
+.pager-pages button[data-active="1"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pager-pages button:disabled{opacity:.4;cursor:not-allowed}
+
+/* ───────── Forms ───────── */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.field .hint{font-size:11.5px;color:var(--muted)}
+.input,.select{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;transition:border-color .12s, box-shadow .12s;width:100%}
+.input:focus,.select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.select{padding-right:32px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%238a7659' d='M0 0h10L5 6z'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
+.input[data-prefix]{padding-left:38px}
+.input-wrap{position:relative}
+.input-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.seg button{appearance:none;border:0;background:transparent;padding:6px 11px;border-radius:6px;font-size:12.5px;color:var(--muted);font-weight:600;cursor:pointer;font-family:inherit}
+.seg button[data-active="1"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+
+/* ───────── Modal ───────── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(42,29,18,.32);backdrop-filter:blur(2px);z-index:80;display:grid;place-items:center;padding:24px;animation:fadeIn .15s ease}
+.modal{background:var(--surface);border-radius:16px;width:min(960px,100%);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -10px rgba(42,29,18,.4);animation:popIn .18s cubic-bezier(.3,.7,.4,1.2)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-hd{display:flex;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.modal-bd{padding:20px 22px;overflow-y:auto}
+.modal-ft{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:var(--surface-2)}
+.modal-close{margin-left:auto;width:32px;height:32px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:18px}
+.modal-close:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ───────── Toast ───────── */
+.toast-stack{position:fixed;top:18px;right:18px;z-index:100;display:flex;flex-direction:column;gap:10px;max-width:340px}
+.toast{background:var(--sidebar);color:#fff;padding:12px 16px;border-radius:11px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(42,29,18,.28);animation:slideIn .22s cubic-bezier(.3,.7,.4,1.2)}
+.toast.success{background:#3d5524}
+.toast.error{background:#7a2e22}
+.toast.info{background:var(--sidebar)}
+.toast b{font-size:13px;font-weight:600;display:block}
+.toast small{font-size:11.5px;opacity:.85;display:block;margin-top:1px}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ───────── Utility ───────── */
+.muted{color:var(--muted)}
+.tab-num{font-variant-numeric:tabular-nums}
+.flex{display:flex}
+.flex-1{flex:1}
+.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}.gap-24{gap:24px}
+.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}
+.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}
+.ai-center{align-items:center}
+.jc-between{justify-content:space-between}
+.divider{height:1px;background:var(--line);margin:14px 0}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:10px 18px;font-size:13px}
+.kv dt{color:var(--muted);font-weight:500}
+.kv dd{margin:0;color:var(--ink);font-weight:500}
+
+/* ───────── Print preview ───────── */
+.print-page{background:#fff;width:794px;min-height:1123px;margin:0 auto;padding:54px 60px;box-shadow:0 4px 24px rgba(42,29,18,.12);font-family:var(--font);color:#1a1a1a}
+.print-hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2px solid #1a1a1a}
+.print-hd h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.print-hd h2{margin:2px 0 0;font-size:13px;font-weight:500;color:#555}
+.print-meta{font-size:11px;color:#555;text-align:right}
+.print-tbl{width:100%;border-collapse:collapse;margin-top:22px;font-size:11.5px}
+.print-tbl th,.print-tbl td{padding:8px 10px;border-bottom:1px solid #ddd;text-align:left}
+.print-tbl th{background:#f0f0f0;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+.print-tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.print-tbl tfoot td{font-weight:700;border-top:2px solid #1a1a1a}
+.print-ft{margin-top:50px;display:flex;justify-content:space-between;font-size:11px;color:#555}
+.print-sign{text-align:center;width:180px}
+.print-sign .line{margin-top:60px;border-top:1px solid #1a1a1a;padding-top:6px;font-weight:600;color:#1a1a1a}
+
+/* ───────── Charts: legend ───────── */
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-2);padding:0 4px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-sw{width:10px;height:10px;border-radius:3px}
+
+.empty-state{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty-state svg{opacity:.35;margin-bottom:10px}
+
+.placeholder{background:
+  repeating-linear-gradient(45deg,transparent 0 8px, rgba(184,105,74,.06) 8px 9px),
+  var(--surface-2);
+  border:1px dashed var(--line);border-radius:10px}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+  <!-- tweaks-panel -->
+  <script type="text/babel">
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;overflow-wrap:anywhere}
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = { x: startRight - (ev.clientX - sx), y: startBottom - (ev.clientY - sy) };
+      clampToViewport();
+    };
+    const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" onMouseDown={(e) => e.stopPropagation()} onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">{children}</div>
+      </div>
+    </>
+  );
+}
+
+function TweakSection({ label, children }) {
+  return <><div className="twk-sect">{label}</div>{children}</>;
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options} onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => { if (!trackRef.current) return; const v = segAt(ev.clientX); if (v !== valueRef.current) onChange(v); };
+    const up = () => { setDragging(false); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`, width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>{o.label}</button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => { if (min != null && n < min) return min; if (max != null && n > max) return max; return n; };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl">{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value} onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    style={{ background: hero }} onClick={() => onChange(o)}>
+              {sup.length > 0 && <span>{sup.map((c, j) => <i key={j} style={{ background: c }} />)}</span>}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'} onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+  </script>
+
+
+  <!-- data -->
+  <script type="text/babel">
+const MARGA = [
+  "Marpaung","Sitorus","Simanjuntak","Hutabarat","Hutahaean",
+  "Pasaribu","Panggabean","Siregar","Tobing","Aritonang",
+  "Manurung","Silalahi","Simbolon","Nainggolan","Tampubolon",
+  "Hutapea","Lubis","Sianturi","Pakpahan","Sihotang",
+  "Sinaga","Damanik","Saragih","Purba","Tarigan",
+  "Sembiring","Ginting","Sitanggang","Sihombing","Napitupulu",
+  "Marbun","Lumbantobing","Pardede","Simatupang","Siahaan",
+  "Sagala","Sitompul","Hutagalung","Hutagaol","Lumban Gaol",
+];
+const FIRST = [
+  "Bonar","Marsada","Tigor","Parlin","Jansen","Robert","Daud",
+  "Hotma","Tumpal","Domu","Sahala","Mangihut","Berton","Hasudungan",
+  "Marolop","Sintong","Manogu","Pardomuan","Sutan","Sahat",
+  "Posma","Tahi","Marudut","Binsar","Toga","Maruli","Parmonangan",
+  "Maruba","Halomoan","Mangaratua","Anggiat","Tongam","Rolas",
+  "Marojahan","Saur","Bona","Parlindungan","Jonggi","Marasi",
+];
+const JENIS_IURAN = [
+  { id_jenis: 1, nama_jenis: "Tabungan Pokok",    nominal_default: 25000, tipe: "tabungan" },
+  { id_jenis: 2, nama_jenis: "Tabungan Sukarela", nominal_default: 20000, tipe: "tabungan" },
+  { id_jenis: 3, nama_jenis: "Dana Bersama",      nominal_default: 10000, tipe: "tabungan" },
+];
+const USERS = [
+  { id_user: 1, nama: "Robert Marpaung",   username: "robert.m",   role: "admin",     last_login: "2026-05-18 08:12" },
+  { id_user: 2, nama: "Tiurma Sitorus",    username: "tiurma.s",   role: "bendahara", last_login: "2026-05-18 07:40" },
+  { id_user: 3, nama: "Pdt. Daud Hutapea", username: "daud.h",     role: "admin",     last_login: "2026-05-15 19:08" },
+  { id_user: 4, nama: "Maruli Panggabean", username: "maruli.p",   role: "bendahara", last_login: "2026-05-12 11:24" },
+];
+const METODE = ["Tunai","Transfer","QRIS"];
+
+function mulberry32(seed){
+  return function(){
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const rng = mulberry32(20260518);
+const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+const rint = (a,b) => Math.floor(rng() * (b - a + 1)) + a;
+
+const KELUARGA = (() => {
+  const out = [];
+  const usedNames = new Set();
+  for (let i = 1; i <= 60; i++) {
+    let name;
+    let attempts = 0;
+    do { name = `${pick(FIRST)} ${pick(MARGA)}`; attempts++; } while (usedNames.has(name) && attempts < 20);
+    usedNames.add(name);
+    const noHp = `0812${rint(1000,9999)}${rint(1000,9999)}`;
+    const status = rng() < 0.92 ? "aktif" : "nonaktif";
+    const monthsAgo = rint(2, 96);
+    const join = new Date(2026, 4, 1);
+    join.setMonth(join.getMonth() - monthsAgo);
+    out.push({ id_keluarga: i, no_anggota: `STM-${String(i).padStart(3,'0')}`, kepala_keluarga: name, no_hp: noHp, status, tanggal_gabung: join.toISOString().slice(0,10) });
+  }
+  return out;
+})();
+
+const PEMBAYARAN = (() => {
+  const out = [];
+  let id = 1;
+  const TODAY = new Date(2026, 4, 18);
+  const months = [];
+  for (let k = 17; k >= 0; k--) {
+    const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - k, 1);
+    months.push({ bulan: d.getMonth() + 1, tahun: d.getFullYear() });
+  }
+  for (const kel of KELUARGA) {
+    if (kel.status !== "aktif") continue;
+    const frequency = 0.65 + rng() * 0.30;
+    for (const m of months) {
+      for (const j of JENIS_IURAN) {
+        const isCurrent = m.bulan === TODAY.getMonth() + 1 && m.tahun === TODAY.getFullYear();
+        const baseProb = j.id_jenis === 1 ? frequency : frequency * 0.75;
+        const prob = isCurrent ? baseProb * 0.55 : baseProb;
+        if (rng() > prob) continue;
+        let nominal = j.nominal_default;
+        if (rng() < 0.22) { const variance = [-5000, 5000, 10000, 15000, -2500, 5000, 25000][rint(0,6)]; nominal = Math.max(5000, nominal + variance); }
+        const day = isCurrent ? rint(1, TODAY.getDate()) : rint(2, 28);
+        const tanggal = `${m.tahun}-${String(m.bulan).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        out.push({ id_pembayaran: id++, id_keluarga: kel.id_keluarga, id_jenis: j.id_jenis, bulan: m.bulan, tahun: m.tahun, nominal, tanggal_bayar: tanggal, metode_pembayaran: rng() < 0.6 ? "Tunai" : rng() < 0.85 ? "Transfer" : "QRIS", keterangan: rng() < 0.08 ? "Disetor via koordinator" : "", dicatat_oleh: pick(USERS).nama });
+      }
+    }
+  }
+  return out;
+})();
+
+const AKTIVITAS = (() => {
+  const verbs = [
+    { v:"Mencatat setoran", t:"payment" }, { v:"Menambah anggota", t:"create" },
+    { v:"Memperbarui data anggota", t:"update" }, { v:"Mengubah jenis tabungan", t:"update" },
+    { v:"Login", t:"auth" }, { v:"Export laporan PDF", t:"export" },
+    { v:"Export Excel", t:"export" }, { v:"Menonaktifkan anggota", t:"warn" },
+  ];
+  const out = [];
+  const TODAY = new Date(2026, 4, 18, 9, 12);
+  let cursor = new Date(TODAY);
+  for (let i = 0; i < 24; i++) {
+    cursor = new Date(cursor.getTime() - rint(8, 240) * 60 * 1000);
+    const v = pick(verbs);
+    const u = pick(USERS);
+    let detail = "";
+    if (v.t === "payment") { const k = pick(KELUARGA); const j = pick(JENIS_IURAN); detail = `${k.kepala_keluarga} — ${j.nama_jenis} Mei 2026`; }
+    else if (v.t === "create" || v.t === "warn") { detail = pick(KELUARGA).kepala_keluarga; }
+    else if (v.t === "update") { detail = rng() < 0.5 ? pick(KELUARGA).kepala_keluarga : "Nominal Dana Bersama"; }
+    else if (v.t === "export") { detail = "Rekap Bulanan April 2026"; }
+    else { detail = "Sesi web"; }
+    out.push({ id: i + 1, waktu: cursor.toISOString().slice(0,16).replace("T"," "), user: u.nama, aksi: v.v, detail, tipe: v.t });
+  }
+  return out;
+})();
+
+const BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const BULAN_ID_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+function formatCurrency(n, mode = "rp") {
+  const abs = Math.abs(Math.round(n));
+  const grouped = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const sign = n < 0 ? "-" : "";
+  if (mode === "idr") return `${sign}IDR ${grouped}`;
+  return `${sign}Rp ${grouped}`;
+}
+function formatCurrencyCompact(n, mode = "rp") {
+  const abs = Math.abs(n);
+  const prefix = mode === "idr" ? "IDR " : "Rp ";
+  const sign = n < 0 ? "-" : "";
+  if (abs >= 1e9) return `${sign}${prefix}${(abs/1e9).toFixed(1).replace(/\.0$/,"")}M`;
+  if (abs >= 1e6) return `${sign}${prefix}${(abs/1e6).toFixed(1).replace(/\.0$/,"")}jt`;
+  if (abs >= 1e3) return `${sign}${prefix}${(abs/1e3).toFixed(0)}rb`;
+  return `${sign}${prefix}${abs}`;
+}
+function avatarColor(name) {
+  const palette = ["#b8694a","#9a5638","#7a8c4d","#4a6f8a","#8a6e3f","#7a4f37","#6a5a7a","#a37049"];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
+}
+function initials(name) {
+  const parts = name.trim().split(/\s+/);
+  return (parts[0]?.[0] || "") + (parts[parts.length-1]?.[0] || "");
+}
+
+function pembayaranByKeluarga(idKel) { return PEMBAYARAN.filter(p => p.id_keluarga === idKel); }
+function totalKeluarga(idKel) { return pembayaranByKeluarga(idKel).reduce((s,p) => s + p.nominal, 0); }
+function pembayaranBulan(bulan, tahun) { return PEMBAYARAN.filter(p => p.bulan === bulan && p.tahun === tahun); }
+function pemasukanBulanan(tahun) {
+  const arr = new Array(12).fill(0);
+  for (const p of PEMBAYARAN) { if (p.tahun === tahun) arr[p.bulan - 1] += p.nominal; }
+  return arr;
+}
+function pemasukanPerJenis(tahun, bulan = null) {
+  const map = {};
+  for (const j of JENIS_IURAN) map[j.id_jenis] = 0;
+  for (const p of PEMBAYARAN) {
+    if (p.tahun !== tahun) continue;
+    if (bulan && p.bulan !== bulan) continue;
+    map[p.id_jenis] += p.nominal;
+  }
+  return JENIS_IURAN.map(j => ({ jenis: j, total: map[j.id_jenis] }));
+}
+function pemasukanPerTahun() {
+  const map = {};
+  for (const p of PEMBAYARAN) { map[p.tahun] = (map[p.tahun] || 0) + p.nominal; }
+  return Object.entries(map).map(([t,v]) => ({ tahun: Number(t), total: v })).sort((a,b) => a.tahun - b.tahun);
+}
+
+Object.assign(window, {
+  STM: { KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS, METODE, BULAN_ID, BULAN_ID_FULL,
+         formatCurrency, formatCurrencyCompact, avatarColor, initials,
+         pembayaranByKeluarga, totalKeluarga, pembayaranBulan, pemasukanBulanan, pemasukanPerJenis, pemasukanPerTahun }
+});
+  </script>
+
+  <!-- shell -->
+  <script type="text/babel">
+const Icon = ({ name, size = 18, color = "currentColor", strokeWidth = 1.7 }) => {
+  const paths = {
+    dashboard: <><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></>,
+    users: <><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="16.5" cy="9" r="2.5"/><path d="M14 14c2 0 5 1.5 5 4"/></>,
+    plus: <><path d="M12 5v14M5 12h14"/></>,
+    receipt: <><path d="M5 3h14v18l-3-2-3 2-2-2-3 2-3-2V3z"/><path d="M9 8h6M9 12h6M9 16h4"/></>,
+    chart: <><path d="M4 20V8M10 20V4M16 20v-7M22 20H2"/></>,
+    pie: <><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/><path d="M14 3.2A9 9 0 0 1 20.8 10H14V3.2z"/></>,
+    alert: <><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18.5v.01"/></>,
+    book: <><path d="M4 4h12a4 4 0 0 1 4 4v13H8a4 4 0 0 1-4-4V4z"/><path d="M4 17a4 4 0 0 1 4-4h12"/></>,
+    tag: <><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="7.5" r="1.2"/></>,
+    user: <><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></>,
+    history: <><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 8v5l3 2"/></>,
+    print: <><rect x="6" y="3" width="12" height="6"/><rect x="3" y="9" width="18" height="9" rx="1.5"/><rect x="6" y="14" width="12" height="7"/></>,
+    search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>,
+    bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l2 3H4l2-3z"/><path d="M10 19a2 2 0 0 0 4 0"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .4 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></>,
+    chev: <><path d="m9 6 6 6-6 6"/></>,
+    chev_down: <><path d="m6 9 6 6 6-6"/></>,
+    sort: <><path d="m7 4 0 16M3 16l4 4 4-4M17 20l0-16M13 8l4-4 4 4"/></>,
+    sort_up: <><path d="m6 14 6-6 6 6"/></>,
+    sort_down: <><path d="m6 10 6 6 6-6"/></>,
+    download: <><path d="M12 3v13m-5-5 5 5 5-5"/><path d="M4 21h16"/></>,
+    file_excel: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 13 6 6M15 13l-6 6"/></>,
+    file_pdf: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 17v-4h1.5a1.5 1.5 0 0 1 0 3H8m4 1v-4h1.5a1.5 1.5 0 0 1 1.5 1.5v1A1.5 1.5 0 0 1 13.5 17H12m4-4h2m-2 0v4m0-2h1.5"/></>,
+    check: <><path d="m5 12 5 5L20 7"/></>,
+    x: <><path d="M6 6l12 12M18 6 6 18"/></>,
+    panel_left: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
+    money: <><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 10v.01M18 14v.01"/></>,
+    trending: <><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></>,
+    edit: <><path d="M14 4 4 14v6h6L20 10z"/><path d="m13 5 6 6"/></>,
+    trash: <><path d="M4 7h16M9 7V4h6v3m1 0v13H8V7"/></>,
+    eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></>,
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></>,
+    filter: <><path d="M3 4h18l-7 9v7l-4-2v-5L3 4z"/></>,
+    arrowUp: <><path d="m6 14 6-6 6 6"/></>,
+    arrowDown: <><path d="m6 10 6 6 6-6"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+         stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+};
+
+const NAV = [
+  { section: "Utama" },
+  { id: "dashboard",   label: "Dashboard",         icon: "dashboard" },
+  { id: "keluarga",    label: "Daftar Keluarga",   icon: "users" },
+  { id: "input",       label: "Input Setoran",     icon: "plus" },
+  { section: "Laporan" },
+  { id: "rekap-bulan", label: "Rekap Bulanan",     icon: "receipt" },
+  { id: "rekap-tahun", label: "Rekap Tahunan",     icon: "chart" },
+  { id: "print",       label: "Cetak / Export",    icon: "print" },
+  { section: "Administrasi" },
+  { id: "jenis",       label: "Jenis Tabungan",    icon: "tag" },
+  { id: "users",       label: "User & Pengurus",   icon: "user" },
+  { id: "aktivitas",   label: "Riwayat Aktivitas", icon: "history" },
+];
+
+function Sidebar({ route, setRoute }) {
+  return (
+    <aside className="sidebar">
+      <div className="sb-brand">
+        <div className="sb-mark">SD</div>
+        <div><div className="sb-name">STM Dos Ni Roha</div><div className="sb-sub">Admin Panel</div></div>
+      </div>
+      {NAV.map((item, i) => {
+        if (item.section) return <div key={`s${i}`} className="sb-section">{item.section}</div>;
+        const active = route === item.id;
+        return (
+          <div key={item.id} className="sb-item" data-active={active ? "1" : "0"}
+               onClick={() => setRoute(item.id)} title={item.label}>
+            <span className="sb-ico"><Icon name={item.icon} size={18}/></span>
+            <span className="sb-label">{item.label}</span>
+          </div>
+        );
+      })}
+      <div className="sb-foot">
+        <div className="sb-avatar">RM</div>
+        <div style={{minWidth:0,flex:1}}>
+          <div className="sb-user-name">Robert Marpaung</div>
+          <div className="sb-user-role">Administrator</div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function Topbar({ title, crumb, onToggleSidebar, search, onSearch, rightSlot }) {
+  return (
+    <header className="topbar">
+      <button className="tb-icon-btn" onClick={onToggleSidebar} aria-label="Toggle sidebar">
+        <Icon name="panel_left" size={17}/>
+      </button>
+      <div>
+        <div className="tb-title">{title}</div>
+        {crumb && <div className="tb-crumb">{crumb}</div>}
+      </div>
+      <div className="tb-spacer"/>
+      {onSearch != null && (
+        <div className="tb-search">
+          <Icon name="search" size={15} color="var(--muted)"/>
+          <input value={search || ""} onChange={(e) => onSearch(e.target.value)} placeholder="Cari nama, no. anggota…"/>
+        </div>
+      )}
+      {rightSlot}
+      <button className="tb-icon-btn" aria-label="Notifikasi">
+        <Icon name="bell" size={17}/><span className="dot"/>
+      </button>
+    </header>
+  );
+}
+
+const ToastCtx = React.createContext(() => {});
+const useToast = () => React.useContext(ToastCtx);
+
+function ToastHost({ children }) {
+  const [items, setItems] = React.useState([]);
+  const push = React.useCallback((t) => {
+    const id = Math.random().toString(36).slice(2);
+    setItems((xs) => [...xs, { id, kind: "info", ...t }]);
+    setTimeout(() => setItems((xs) => xs.filter(x => x.id !== id)), t.duration || 3200);
+  }, []);
+  return (
+    <ToastCtx.Provider value={push}>
+      {children}
+      <div className="toast-stack">
+        {items.map(t => (
+          <div key={t.id} className={`toast ${t.kind}`}>
+            <Icon name={t.kind === "success" ? "check" : t.kind === "error" ? "alert" : "bell"} size={16}/>
+            <div><b>{t.title}</b>{t.body && <small>{t.body}</small>}</div>
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
+  );
+}
+
+function Modal({ open, onClose, title, subtitle, children, footer, width }) {
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{width: width || undefined}} onClick={e => e.stopPropagation()}>
+        <div className="modal-hd">
+          <div>
+            <div style={{fontSize:16,fontWeight:700,letterSpacing:"-0.01em"}}>{title}</div>
+            {subtitle && <div style={{fontSize:12.5,color:"var(--muted)",marginTop:2}}>{subtitle}</div>}
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Tutup"><Icon name="x" size={16}/></button>
+        </div>
+        <div className="modal-bd">{children}</div>
+        {footer && <div className="modal-ft">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+function BarChart({ data, labels, height = 220, formatY, accent = "var(--accent)" }) {
+  const W = 720, H = height;
+  const padL = 50, padR = 12, padT = 14, padB = 28;
+  const max = Math.max(1, ...data);
+  const niceMax = Math.ceil(max / 5e5) * 5e5;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const bw = innerW / data.length * 0.62;
+  const gap = (innerW / data.length) * 0.38;
+  const [hover, setHover] = React.useState(null);
+  const yticks = 4;
+  return (
+    <div style={{position:"relative"}}>
+      <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        {Array.from({length: yticks + 1}).map((_,i) => {
+          const v = (niceMax / yticks) * i;
+          const y = padT + innerH - (v / niceMax) * innerH;
+          return (
+            <g key={i}>
+              <line className="chart-grid" x1={padL} x2={W-padR} y1={y} y2={y}/>
+              <text className="chart-axis" x={padL - 8} y={y + 3} textAnchor="end">{formatY ? formatY(v) : v}</text>
+            </g>
+          );
+        })}
+        {data.map((v,i) => {
+          const x = padL + (innerW / data.length) * i + gap / 2;
+          const h = niceMax === 0 ? 0 : (v / niceMax) * innerH;
+          const y = padT + innerH - h;
+          const hi = hover === i;
+          return (
+            <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+              <rect x={x} y={padT} width={bw} height={innerH} fill="transparent"/>
+              <rect x={x} y={y} width={bw} height={h} rx={4} ry={4} fill={hi ? "var(--accent-2)" : accent}/>
+              <text className="chart-axis" x={x + bw/2} y={H - 10} textAnchor="middle">{labels[i]}</text>
+            </g>
+          );
+        })}
+      </svg>
+      {hover !== null && (
+        <div className="tooltip"
+             style={{left:`calc(${(padL+(innerW/data.length)*hover+gap/2+bw/2)/W*100}% - 50px)`,
+                     top:`${(padT+innerH-(data[hover]/niceMax)*innerH)/H*100}%`,
+                     transform:"translateY(-130%)"}}>
+          <b>{labels[hover]}</b> · {formatY ? formatY(data[hover]) : data[hover]}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LineChart({ data, labels, height = 220, formatY }) {
+  const W = 720, H = height;
+  const padL = 50, padR = 12, padT = 14, padB = 28;
+  const max = Math.max(1, ...data);
+  const niceMax = Math.ceil(max / 5e5) * 5e5;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const pts = data.map((v,i) => {
+    const x = padL + (innerW / Math.max(1, data.length - 1)) * i;
+    const y = padT + innerH - (v / niceMax) * innerH;
+    return { x, y, v, i };
+  });
+  const pathD = pts.map((p,i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const areaD = `${pathD} L${pts[pts.length-1].x.toFixed(1)} ${padT + innerH} L${pts[0].x.toFixed(1)} ${padT + innerH} Z`;
+  const [hover, setHover] = React.useState(null);
+  const yticks = 4;
+  return (
+    <div style={{position:"relative"}}>
+      <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="chartAreaFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22"/>
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        {Array.from({length: yticks + 1}).map((_,i) => {
+          const v = (niceMax / yticks) * i;
+          const y = padT + innerH - (v / niceMax) * innerH;
+          return (
+            <g key={i}>
+              <line className="chart-grid" x1={padL} x2={W-padR} y1={y} y2={y}/>
+              <text className="chart-axis" x={padL - 8} y={y + 3} textAnchor="end">{formatY ? formatY(v) : v}</text>
+            </g>
+          );
+        })}
+        <path className="chart-area" d={areaD}/>
+        <path className="chart-line" d={pathD}/>
+        {pts.map((p) => (
+          <g key={p.i} onMouseEnter={() => setHover(p.i)} onMouseLeave={() => setHover(null)}>
+            <circle className="chart-dot" cx={p.x} cy={p.y} r={4}/>
+            <rect x={p.x - 18} y={padT} width={36} height={innerH} fill="transparent"/>
+            <text className="chart-axis" x={p.x} y={H - 10} textAnchor="middle">{labels[p.i]}</text>
+          </g>
+        ))}
+      </svg>
+      {hover !== null && (
+        <div className="tooltip"
+             style={{left:`calc(${pts[hover].x/W*100}% - 50px)`,top:`${pts[hover].y/H*100}%`,transform:"translateY(-160%)"}}>
+          <b>{labels[hover]}</b> · {formatY ? formatY(data[hover]) : data[hover]}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DonutChart({ slices, total, formatY, size = 200 }) {
+  const r = (size - 28) / 2;
+  const c = size / 2;
+  const C = 2 * Math.PI * r;
+  let acc = 0;
+  const palette = ["#b8694a","#7a8c4d","#4a6f8a","#c8893a","#9a5638"];
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+      <circle cx={c} cy={c} r={r} fill="none" stroke="var(--line-2)" strokeWidth="22"/>
+      {slices.map((s,i) => {
+        const frac = total === 0 ? 0 : s.value / total;
+        const dash = frac * C;
+        const off = -acc * C;
+        acc += frac;
+        return (
+          <circle key={i} cx={c} cy={c} r={r} fill="none"
+                  stroke={palette[i % palette.length]} strokeWidth="22"
+                  strokeDasharray={`${dash} ${C - dash}`}
+                  strokeDashoffset={off}
+                  transform={`rotate(-90 ${c} ${c})`}
+                  strokeLinecap="butt"/>
+        );
+      })}
+      <text x={c} y={c - 2} textAnchor="middle" fontSize="11" fill="var(--muted)" fontFamily="var(--font)" fontWeight="500">Total</text>
+      <text x={c} y={c + 16} textAnchor="middle" fontSize="15.5" fill="var(--ink)" fontFamily="var(--font)" fontWeight="700" style={{fontVariantNumeric:"tabular-nums"}}>
+        {formatY ? formatY(total) : total}
+      </text>
+    </svg>
+  );
+}
+
+function SortHeader({ label, field, sort, setSort, align = "left" }) {
+  const active = sort.field === field;
+  const dir = active ? sort.dir : null;
+  return (
+    <th data-sortable="1" data-sort={active ? dir : null} style={{textAlign: align, cursor:"pointer"}}
+        onClick={() => setSort({ field, dir: active && dir === "asc" ? "desc" : "asc" })}>
+      <span style={{display:"inline-flex",alignItems:"center",gap:4,justifyContent:align==="right"?"flex-end":"flex-start"}}>
+        {label}
+        <span className="sort-ico">
+          {!active ? <Icon name="sort" size={12}/> : dir === "asc" ? <Icon name="sort_up" size={12}/> : <Icon name="sort_down" size={12}/>}
+        </span>
+      </span>
+    </th>
+  );
+}
+
+function sortBy(arr, field, dir) {
+  if (!field) return arr;
+  const sign = dir === "asc" ? 1 : -1;
+  return [...arr].sort((a,b) => {
+    const av = a[field], bv = b[field];
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * sign;
+    return String(av).localeCompare(String(bv), "id") * sign;
+  });
+}
+
+function Pager({ page, setPage, total, perPage }) {
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const nums = [];
+  const win = 2;
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || (i >= page - win && i <= page + win)) nums.push(i);
+    else if (nums[nums.length-1] !== "…") nums.push("…");
+  }
+  const from = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const to = Math.min(total, page * perPage);
+  return (
+    <div className="pager">
+      <div>Menampilkan <b className="tab-num" style={{color:"var(--ink)"}}>{from}–{to}</b> dari <b className="tab-num" style={{color:"var(--ink)"}}>{total}</b></div>
+      <div className="pager-pages">
+        <button disabled={page === 1} onClick={() => setPage(page - 1)}>‹</button>
+        {nums.map((n,i) => n === "…"
+          ? <button key={i} disabled>…</button>
+          : <button key={i} data-active={n === page ? "1" : "0"} onClick={() => setPage(n)}>{n}</button>)}
+        <button disabled={page === pages} onClick={() => setPage(page + 1)}>›</button>
+      </div>
+    </div>
+  );
+}
+
+function Avatar({ name, size = "md" }) {
+  const { avatarColor, initials } = window.STM;
+  return (
+    <div className={`avatar ${size === "sm" ? "sm" : ""}`} style={{background: avatarColor(name)}}>
+      {initials(name).toUpperCase()}
+    </div>
+  );
+}
+
+Object.assign(window, {
+  Icon, Sidebar, Topbar, ToastHost, useToast, Modal,
+  BarChart, LineChart, DonutChart, SortHeader, sortBy, Pager, Avatar,
+});
+  </script>
+
+  <!-- dashboard -->
+  <script type="text/babel">
+function Dashboard({ setRoute, currency }) {
+  const S = window.STM;
+  const TODAY = { tahun: 2026, bulan: 5 };
+  const fmt = (v) => S.formatCurrency(v, currency);
+  const fmtCompact = (v) => S.formatCurrencyCompact(v, currency);
+
+  const aktif = S.KELUARGA.filter(k => k.status === "aktif").length;
+  const nonaktif = S.KELUARGA.length - aktif;
+  const bulanIni = S.pembayaranBulan(TODAY.bulan, TODAY.tahun);
+  const totalBulanIni = bulanIni.reduce((s,p) => s + p.nominal, 0);
+  const bulanLalu = S.pembayaranBulan(TODAY.bulan - 1, TODAY.tahun);
+  const totalBulanLalu = bulanLalu.reduce((s,p) => s + p.nominal, 0);
+  const growth = totalBulanLalu === 0 ? 0 : ((totalBulanIni - totalBulanLalu) / totalBulanLalu) * 100;
+  const saldoTotal = S.PEMBAYARAN.reduce((s,p) => s + p.nominal, 0);
+  const rataRata = aktif === 0 ? 0 : saldoTotal / aktif;
+  const transaksiBulanIni = bulanIni.length;
+  const anggotaSetorBulanIni = new Set(bulanIni.map(p => p.id_keluarga)).size;
+
+  const months12 = [];
+  for (let k = 11; k >= 0; k--) {
+    const d = new Date(TODAY.tahun, TODAY.bulan - 1 - k, 1);
+    months12.push({ bulan: d.getMonth() + 1, tahun: d.getFullYear() });
+  }
+  const incomeBars = months12.map(m =>
+    S.PEMBAYARAN.filter(p => p.bulan === m.bulan && p.tahun === m.tahun).reduce((s,p) => s + p.nominal, 0)
+  );
+  const incomeLabels = months12.map(m => `${S.BULAN_ID[m.bulan-1]}${m.bulan === 1 ? " '" + String(m.tahun).slice(2) : ""}`);
+
+  const tahunan = (() => { let acc = 0; return months12.map((m,i) => { acc += incomeBars[i]; return acc; }); })();
+
+  const perJenis = S.pemasukanPerJenis(TODAY.tahun, TODAY.bulan);
+  const donutTotal = perJenis.reduce((s,p) => s + p.total, 0);
+
+  const totalsPerKel = S.KELUARGA.filter(k => k.status === "aktif").map(k => ({
+    k, total: S.totalKeluarga(k.id_keluarga)
+  })).sort((a,b) => b.total - a.total);
+  const topKontrib = totalsPerKel.slice(0, 8);
+  const topMax = topKontrib[0]?.total || 1;
+
+  const recent = [...S.PEMBAYARAN].sort((a,b) => b.tanggal_bayar.localeCompare(a.tanggal_bayar)).slice(0,6);
+
+  return (
+    <div className="grid" style={{gap:20}}>
+      <div className="grid grid-4">
+        <div className="card stat">
+          <div className="stat-hd">
+            <div className="stat-lbl">Anggota Aktif</div>
+            <div className="stat-ico"><Icon name="users" size={16}/></div>
+          </div>
+          <div className="stat-val">{aktif}<span style={{fontSize:14,color:"var(--muted)",fontWeight:500}}> / {S.KELUARGA.length}</span></div>
+          <div className="stat-sub">
+            <span className="stat-trend up"><Icon name="arrowUp" size={10}/> 2 baru</span>
+            <span>· {nonaktif} non-aktif</span>
+          </div>
+        </div>
+        <div className="card stat">
+          <div className="stat-hd">
+            <div className="stat-lbl">Saldo Tabungan</div>
+            <div className="stat-ico green"><Icon name="money" size={16}/></div>
+          </div>
+          <div className="stat-val">{fmtCompact(saldoTotal)}</div>
+          <div className="stat-sub"><span>Akumulasi seluruh waktu</span></div>
+        </div>
+        <div className="card stat">
+          <div className="stat-hd">
+            <div className="stat-lbl">Setoran Mei 2026</div>
+            <div className="stat-ico"><Icon name="trending" size={16}/></div>
+          </div>
+          <div className="stat-val">{fmtCompact(totalBulanIni)}</div>
+          <div className="stat-sub">
+            <span className={`stat-trend ${growth >= 0 ? "up" : "down"}`}>
+              <Icon name={growth >= 0 ? "arrowUp" : "arrowDown"} size={10}/>{Math.abs(growth).toFixed(1)}%
+            </span>
+            <span>vs April · {anggotaSetorBulanIni} anggota</span>
+          </div>
+        </div>
+        <div className="card stat">
+          <div className="stat-hd">
+            <div className="stat-lbl">Rata-rata Saldo / Anggota</div>
+            <div className="stat-ico warn"><Icon name="receipt" size={16}/></div>
+          </div>
+          <div className="stat-val">{fmtCompact(rataRata)}</div>
+          <div className="stat-sub"><span>{transaksiBulanIni} transaksi bulan ini</span></div>
+        </div>
+      </div>
+
+      <div className="grid" style={{gridTemplateColumns:"1.6fr 1fr",gap:20}}>
+        <div className="card">
+          <div className="card-hd">
+            <div><h3>Setoran 12 Bulan Terakhir</h3><div className="muted" style={{fontSize:12}}>Total setoran per bulan</div></div>
+            <div className="card-hd-actions">
+              <span className="badge badge-accent"><span className="badge-dot"/> {fmtCompact(incomeBars.reduce((a,b)=>a+b,0))} total</span>
+            </div>
+          </div>
+          <div className="chart-wrap"><BarChart data={incomeBars} labels={incomeLabels} height={240} formatY={fmtCompact}/></div>
+        </div>
+        <div className="card">
+          <div className="card-hd">
+            <div><h3>Setoran per Jenis · Mei</h3><div className="muted" style={{fontSize:12}}>Breakdown kategori tabungan</div></div>
+          </div>
+          <div style={{padding:"10px 18px 18px",display:"flex",alignItems:"center",gap:18}}>
+            <DonutChart slices={perJenis.map(p => ({label:p.jenis.nama_jenis,value:p.total}))} total={donutTotal} formatY={fmtCompact} size={180}/>
+            <div className="legend" style={{flexDirection:"column",gap:9}}>
+              {perJenis.map((p,i) => {
+                const palette = ["#b8694a","#7a8c4d","#4a6f8a","#c8893a","#9a5638"];
+                const pct = donutTotal === 0 ? 0 : Math.round(p.total / donutTotal * 100);
+                return (
+                  <div className="legend-item" key={i} style={{justifyContent:"space-between",width:"100%"}}>
+                    <span style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span className="legend-sw" style={{background:palette[i]}}/><span>{p.jenis.nama_jenis}</span>
+                    </span>
+                    <span className="muted tab-num" style={{fontSize:11.5}}>{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:20}}>
+        <div className="card">
+          <div className="card-hd">
+            <div><h3>Pertumbuhan Saldo Tabungan</h3><div className="muted" style={{fontSize:12}}>Saldo berjalan 12 bulan terakhir</div></div>
+          </div>
+          <div className="chart-wrap"><LineChart data={tahunan} labels={incomeLabels} height={240} formatY={fmtCompact}/></div>
+        </div>
+        <div className="card">
+          <div className="card-hd">
+            <div><h3>Top Penabung</h3><div className="muted" style={{fontSize:12}}>Akumulasi seluruh waktu</div></div>
+            <div className="card-hd-actions">
+              <button className="btn btn-ghost btn-sm" onClick={() => setRoute("keluarga")}>Semua</button>
+            </div>
+          </div>
+          <div style={{padding:"4px 18px 14px"}}>
+            {topKontrib.map((t,i) => {
+              const pct = (t.total / topMax) * 100;
+              return (
+                <div key={t.k.id_keluarga} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0"}}>
+                  <div style={{fontSize:11,color:"var(--muted)",width:14,textAlign:"center",fontWeight:700}}>{i+1}</div>
+                  <Avatar name={t.k.kepala_keluarga} size="sm"/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12.5,fontWeight:600,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.k.kepala_keluarga}</div>
+                    <div style={{height:5,background:"var(--surface-2)",borderRadius:3,marginTop:3,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${pct}%`,background:"var(--accent)",borderRadius:3}}/>
+                    </div>
+                  </div>
+                  <div className="tab-num" style={{fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>{fmtCompact(t.total)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid" style={{gridTemplateColumns:"1fr 1fr",gap:20}}>
+        <div className="card">
+          <div className="card-hd">
+            <div><h3>Setoran Terbaru</h3><div className="muted" style={{fontSize:12}}>6 transaksi terakhir</div></div>
+            <div className="card-hd-actions">
+              <button className="btn btn-ghost btn-sm" onClick={() => setRoute("input")}>Catat</button>
+            </div>
+          </div>
+          <div style={{padding:"6px 8px 10px"}}>
+            {recent.map(p => {
+              const k = S.KELUARGA.find(x => x.id_keluarga === p.id_keluarga);
+              const j = S.JENIS_IURAN.find(x => x.id_jenis === p.id_jenis);
+              return (
+                <div key={p.id_pembayaran} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 14px"}}>
+                  <Avatar name={k?.kepala_keluarga || ""} size="sm"/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>{k?.kepala_keluarga}</div>
+                    <div style={{fontSize:11.5,color:"var(--muted)"}}>{j?.nama_jenis} · {p.tanggal_bayar} · {p.metode_pembayaran}</div>
+                  </div>
+                  <div className="tab-num" style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>+{fmt(p.nominal)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-hd">
+            <div><h3>Aktivitas Terbaru</h3><div className="muted" style={{fontSize:12}}>Catatan pengurus hari ini</div></div>
+            <div className="card-hd-actions">
+              <button className="btn btn-ghost btn-sm" onClick={() => setRoute("aktivitas")}>Semua</button>
+            </div>
+          </div>
+          <div style={{padding:"6px 8px 10px"}}>
+            {S.AKTIVITAS.slice(0,6).map(a => {
+              const iconMap = { payment:"money", create:"plus", update:"edit", auth:"user", export:"download", warn:"alert" };
+              return (
+                <div key={a.id} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"9px 14px"}}>
+                  <div style={{width:30,height:30,borderRadius:8,background:"var(--surface-2)",display:"grid",placeItems:"center",color:"var(--accent)",flexShrink:0}}>
+                    <Icon name={iconMap[a.tipe] || "history"} size={14}/>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,color:"var(--ink-2)"}}><b style={{color:"var(--ink)"}}>{a.user}</b> {a.aksi.toLowerCase()}</div>
+                    <div style={{fontSize:11.5,color:"var(--muted)",marginTop:2}}>{a.detail}</div>
+                  </div>
+                  <div style={{fontSize:11,color:"var(--muted)",whiteSpace:"nowrap"}}>{a.waktu.slice(11)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { Dashboard });
+  </script>
+
+  <!-- keluarga -->
+  <script type="text/babel">
+function Keluarga({ search, setSearch, currency, onAddPayment }) {
+  const S = window.STM;
+  const [statusFilter, setStatusFilter] = React.useState("Semua");
+  const [sort, setSort] = React.useState({ field: "no_anggota", dir: "asc" });
+  const [page, setPage] = React.useState(1);
+  const perPage = 10;
+  const [detail, setDetail] = React.useState(null);
+  const fmt = (v) => S.formatCurrency(v, currency);
+
+  const filtered = React.useMemo(() => {
+    let arr = S.KELUARGA;
+    if (statusFilter !== "Semua") arr = arr.filter(k => k.status === statusFilter);
+    if (search) {
+      const q = search.toLowerCase();
+      arr = arr.filter(k => k.kepala_keluarga.toLowerCase().includes(q) || k.no_anggota.toLowerCase().includes(q));
+    }
+    return arr;
+  }, [search, statusFilter]);
+
+  const withTotals = React.useMemo(() => filtered.map(k => ({
+    ...k,
+    total: S.totalKeluarga(k.id_keluarga),
+    setoran_count: S.pembayaranByKeluarga(k.id_keluarga).length,
+    last_pay: (() => { const ps = S.pembayaranByKeluarga(k.id_keluarga); if (!ps.length) return "—"; return ps.map(p => p.tanggal_bayar).sort().pop(); })(),
+  })), [filtered]);
+
+  const sorted = sortBy(withTotals, sort.field, sort.dir);
+  const pageRows = sorted.slice((page - 1) * perPage, page * perPage);
+  React.useEffect(() => { setPage(1); }, [search, statusFilter]);
+
+  return (
+    <>
+      <div className="card">
+        <div className="card-hd">
+          <div>
+            <h3>Daftar Keluarga · {filtered.length} anggota</h3>
+            <div className="muted" style={{fontSize:12}}>Klik baris untuk membuka detail & riwayat setoran</div>
+          </div>
+          <div className="card-hd-actions">
+            <select className="select" style={{width:140,padding:"7px 32px 7px 12px"}}
+                    value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option>Semua</option>
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Non-aktif</option>
+            </select>
+            <button className="btn btn-primary btn-sm" onClick={() => onAddPayment(null)}>
+              <Icon name="plus" size={14}/> Anggota Baru
+            </button>
+          </div>
+        </div>
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <SortHeader label="No. Anggota" field="no_anggota" sort={sort} setSort={setSort}/>
+                <SortHeader label="Kepala Keluarga" field="kepala_keluarga" sort={sort} setSort={setSort}/>
+                <th>Kontak</th>
+                <SortHeader label="Status" field="status" sort={sort} setSort={setSort}/>
+                <SortHeader label="Setoran" field="setoran_count" sort={sort} setSort={setSort} align="right"/>
+                <SortHeader label="Saldo Tabungan" field="total" sort={sort} setSort={setSort} align="right"/>
+                <SortHeader label="Setoran Terakhir" field="last_pay" sort={sort} setSort={setSort}/>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageRows.length === 0 && (
+                <tr><td colSpan={8}><div className="empty-state"><Icon name="search" size={32}/><div>Tidak ada anggota yang cocok dengan filter.</div></div></td></tr>
+              )}
+              {pageRows.map(k => (
+                <tr key={k.id_keluarga} className="clickable" onClick={() => setDetail(k)}>
+                  <td><span className="tab-num" style={{fontWeight:600,color:"var(--ink)"}}>{k.no_anggota}</span></td>
+                  <td>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <Avatar name={k.kepala_keluarga} size="sm"/>
+                      <div>
+                        <div style={{fontWeight:600,color:"var(--ink)"}}>{k.kepala_keluarga}</div>
+                        <div style={{fontSize:11.5,color:"var(--muted)"}} className="tab-num">Bergabung {k.tanggal_gabung}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="tab-num" style={{fontSize:12.5}}>{k.no_hp}</td>
+                  <td>
+                    {k.status === "aktif"
+                      ? <span className="badge badge-green"><span className="badge-dot"/>Aktif</span>
+                      : <span className="badge badge-neutral"><span className="badge-dot"/>Non-aktif</span>}
+                  </td>
+                  <td className="tbl-num">{k.setoran_count}</td>
+                  <td className="tbl-num"><b>{fmt(k.total)}</b></td>
+                  <td className="tab-num" style={{fontSize:12.5}}>{k.last_pay}</td>
+                  <td>
+                    <button className="btn btn-sec btn-sm" onClick={(e) => { e.stopPropagation(); onAddPayment(k); }}>
+                      <Icon name="plus" size={12}/> Setor
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Pager page={page} setPage={setPage} total={filtered.length} perPage={perPage}/>
+      </div>
+      <KeluargaDetailModal keluarga={detail} onClose={() => setDetail(null)} currency={currency} onAddPayment={onAddPayment}/>
+    </>
+  );
+}
+
+function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
+  const S = window.STM;
+  const fmt = (v) => S.formatCurrency(v, currency);
+  if (!keluarga) return null;
+  const pays = S.pembayaranByKeluarga(keluarga.id_keluarga).sort((a,b) => b.tanggal_bayar.localeCompare(a.tanggal_bayar));
+  const total = pays.reduce((s,p) => s + p.nominal, 0);
+  const perJenis = {};
+  for (const j of S.JENIS_IURAN) perJenis[j.id_jenis] = 0;
+  for (const p of pays) perJenis[p.id_jenis] += p.nominal;
+
+  const TODAY = { tahun: 2026, bulan: 5 };
+  const months12 = [];
+  for (let k = 11; k >= 0; k--) {
+    const d = new Date(TODAY.tahun, TODAY.bulan - 1 - k, 1);
+    months12.push({ bulan: d.getMonth() + 1, tahun: d.getFullYear() });
+  }
+  const bars = months12.map(m => pays.filter(p => p.bulan === m.bulan && p.tahun === m.tahun).reduce((s,p) => s + p.nominal, 0));
+  const labels = months12.map(m => S.BULAN_ID[m.bulan-1]);
+
+  return (
+    <Modal open={!!keluarga} onClose={onClose} title={keluarga.kepala_keluarga}
+           subtitle={`${keluarga.no_anggota} · Bergabung ${keluarga.tanggal_gabung}`}
+           width="960px"
+           footer={<>
+             <button className="btn btn-ghost" onClick={onClose}>Tutup</button>
+             <button className="btn btn-primary" onClick={() => { onClose(); onAddPayment(keluarga); }}>
+               <Icon name="plus" size={14}/> Catat Setoran
+             </button>
+           </>}>
+      <div className="grid" style={{gridTemplateColumns:"260px 1fr",gap:24,marginBottom:18}}>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+            <div style={{width:54,height:54,borderRadius:12,background:S.avatarColor(keluarga.kepala_keluarga),color:"#fff",display:"grid",placeItems:"center",fontSize:18,fontWeight:700}}>
+              {S.initials(keluarga.kepala_keluarga).toUpperCase()}
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600}}>Saldo Tabungan</div>
+              <div style={{fontSize:22,fontWeight:700,letterSpacing:"-0.01em"}} className="tab-num">{fmt(total)}</div>
+            </div>
+          </div>
+          <dl className="kv">
+            <dt>No. Anggota</dt><dd>{keluarga.no_anggota}</dd>
+            <dt>No. HP</dt><dd className="tab-num">{keluarga.no_hp}</dd>
+            <dt>Status</dt><dd>
+              {keluarga.status === "aktif"
+                ? <span className="badge badge-green"><span className="badge-dot"/>Aktif</span>
+                : <span className="badge badge-neutral"><span className="badge-dot"/>Non-aktif</span>}
+            </dd>
+            <dt>Bergabung</dt><dd>{keluarga.tanggal_gabung}</dd>
+            <dt>Total Setoran</dt><dd className="tab-num">{pays.length} kali</dd>
+          </dl>
+          <div className="divider"/>
+          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:8}}>Breakdown per Jenis</div>
+          {S.JENIS_IURAN.map(j => (
+            <div key={j.id_jenis} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",fontSize:13}}>
+              <span style={{color:"var(--ink-2)"}}>{j.nama_jenis}</span>
+              <b className="tab-num">{fmt(perJenis[j.id_jenis] || 0)}</b>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Setoran 12 Bulan Terakhir</div>
+          <BarChart data={bars} labels={labels} height={160} formatY={(v) => S.formatCurrencyCompact(v, currency)}/>
+          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginTop:14,marginBottom:6}}>
+            Riwayat Setoran ({pays.length})
+          </div>
+          <div style={{maxHeight:280,overflowY:"auto",border:"1px solid var(--line)",borderRadius:10}}>
+            <table className="tbl tbl-noborder">
+              <thead>
+                <tr>
+                  <th>Tanggal</th><th>Jenis</th><th>Periode</th><th>Metode</th>
+                  <th style={{textAlign:"right"}}>Nominal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pays.slice(0, 30).map(p => {
+                  const j = S.JENIS_IURAN.find(x => x.id_jenis === p.id_jenis);
+                  return (
+                    <tr key={p.id_pembayaran}>
+                      <td className="tab-num">{p.tanggal_bayar}</td>
+                      <td>{j?.nama_jenis}</td>
+                      <td className="tab-num">{S.BULAN_ID[p.bulan-1]} {p.tahun}</td>
+                      <td><span className="badge badge-neutral" style={{fontSize:10.5}}>{p.metode_pembayaran}</span></td>
+                      <td className="tbl-num"><b>{fmt(p.nominal)}</b></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+Object.assign(window, { Keluarga });
+  </script>
+
+  <!-- screens-pembayaran -->
+  <script type="text/babel">
+function InputPembayaran({ presetKeluarga, currency, onSaved }) {
+  const S = window.STM;
+  const toast = useToast();
+  const today = "2026-05-18";
+  const [form, setForm] = React.useState({
+    id_keluarga: presetKeluarga?.id_keluarga || "",
+    id_jenis: 1, bulan: 5, tahun: 2026, nominal: 25000,
+    tanggal_bayar: today, metode_pembayaran: "Tunai", keterangan: "",
+  });
+  const [saved, setSaved] = React.useState(() => window.__sessionPayments || []);
+
+  React.useEffect(() => {
+    if (presetKeluarga) setForm(f => ({ ...f, id_keluarga: presetKeluarga.id_keluarga }));
+  }, [presetKeluarga]);
+
+  const onJenisChange = (id) => {
+    const j = S.JENIS_IURAN.find(x => x.id_jenis === Number(id));
+    setForm(f => ({ ...f, id_jenis: Number(id), nominal: j?.nominal_default || f.nominal }));
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.id_keluarga) { toast({ kind:"error", title:"Pilih anggota terlebih dahulu" }); return; }
+    if (!form.nominal || form.nominal < 1000) { toast({ kind:"error", title:"Nominal tidak valid" }); return; }
+    const k = S.KELUARGA.find(x => x.id_keluarga === Number(form.id_keluarga));
+    const j = S.JENIS_IURAN.find(x => x.id_jenis === Number(form.id_jenis));
+    const rec = {
+      id_pembayaran: 90000 + saved.length + 1,
+      ...form,
+      id_keluarga: Number(form.id_keluarga), id_jenis: Number(form.id_jenis),
+      bulan: Number(form.bulan), tahun: Number(form.tahun), nominal: Number(form.nominal),
+      dicatat_oleh: "Robert Marpaung",
+      _kel_name: k?.kepala_keluarga, _jenis_name: j?.nama_jenis,
+    };
+    const next = [rec, ...saved];
+    window.__sessionPayments = next;
+    setSaved(next);
+    S.PEMBAYARAN.push({
+      id_pembayaran: rec.id_pembayaran, id_keluarga: rec.id_keluarga, id_jenis: rec.id_jenis,
+      bulan: rec.bulan, tahun: rec.tahun, nominal: rec.nominal,
+      tanggal_bayar: rec.tanggal_bayar, metode_pembayaran: rec.metode_pembayaran,
+      keterangan: rec.keterangan, dicatat_oleh: rec.dicatat_oleh,
+    });
+    toast({ kind:"success", title:`Setoran tercatat`,
+      body:`${k?.kepala_keluarga} — ${j?.nama_jenis} ${S.BULAN_ID_FULL[rec.bulan-1]} ${rec.tahun} · ${S.formatCurrency(rec.nominal, currency)}` });
+    setForm(f => ({ ...f, nominal: S.JENIS_IURAN.find(x => x.id_jenis === f.id_jenis)?.nominal_default || 25000, keterangan: "", id_keluarga: "" }));
+    onSaved && onSaved(rec);
+  };
+
+  const fmt = (v) => S.formatCurrency(v, currency);
+
+  return (
+    <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:20,alignItems:"flex-start"}}>
+      <div className="card">
+        <div className="card-hd">
+          <div>
+            <h3>Catat Setoran Baru</h3>
+            <div className="muted" style={{fontSize:12}}>Form dicatat atas nama: <b style={{color:"var(--ink-2)"}}>Robert Marpaung (admin)</b></div>
+          </div>
+        </div>
+        <form className="card-pad" onSubmit={submit} style={{display:"grid",gap:14}}>
+          <div className="field">
+            <label>Anggota</label>
+            <select className="select" value={form.id_keluarga} onChange={e => setForm(f => ({...f, id_keluarga: e.target.value}))}>
+              <option value="">— Pilih anggota —</option>
+              {S.KELUARGA.filter(k => k.status === "aktif").map(k => (
+                <option key={k.id_keluarga} value={k.id_keluarga}>{k.no_anggota} · {k.kepala_keluarga}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-2">
+            <div className="field">
+              <label>Jenis Tabungan</label>
+              <select className="select" value={form.id_jenis} onChange={e => onJenisChange(e.target.value)}>
+                {S.JENIS_IURAN.map(j => <option key={j.id_jenis} value={j.id_jenis}>{j.nama_jenis}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Nominal</label>
+              <div className="input-wrap">
+                <span className="input-prefix">{currency === "idr" ? "IDR" : "Rp"}</span>
+                <input className="input" type="number" data-prefix="1" min="1000" step="500"
+                       value={form.nominal} onChange={e => setForm(f => ({...f, nominal: Number(e.target.value) || 0}))}/>
+              </div>
+              <div className="hint">Default: {fmt(S.JENIS_IURAN.find(j => j.id_jenis === Number(form.id_jenis))?.nominal_default || 0)}</div>
+            </div>
+          </div>
+          <div className="grid grid-3">
+            <div className="field">
+              <label>Bulan Periode</label>
+              <select className="select" value={form.bulan} onChange={e => setForm(f => ({...f, bulan: Number(e.target.value)}))}>
+                {S.BULAN_ID_FULL.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Tahun</label>
+              <select className="select" value={form.tahun} onChange={e => setForm(f => ({...f, tahun: Number(e.target.value)}))}>
+                {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Tanggal Setor</label>
+              <input className="input" type="date" value={form.tanggal_bayar} onChange={e => setForm(f => ({...f, tanggal_bayar: e.target.value}))}/>
+            </div>
+          </div>
+          <div className="grid grid-2">
+            <div className="field">
+              <label>Metode Setor</label>
+              <div className="seg" style={{width:"100%"}}>
+                {S.METODE.map(m => (
+                  <button key={m} type="button" style={{flex:1}}
+                          data-active={form.metode_pembayaran === m ? "1" : "0"}
+                          onClick={() => setForm(f => ({...f, metode_pembayaran: m}))}>{m}</button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Keterangan <span className="muted" style={{fontWeight:400}}>(opsional)</span></label>
+              <input className="input" type="text" placeholder="cth. lewat koordinator"
+                     value={form.keterangan} onChange={e => setForm(f => ({...f, keterangan: e.target.value}))}/>
+            </div>
+          </div>
+          <div className="flex gap-12" style={{justifyContent:"flex-end",marginTop:6}}>
+            <button type="button" className="btn btn-ghost" onClick={() => setForm({
+              id_keluarga:"", id_jenis:1, bulan:5, tahun:2026, nominal:25000,
+              tanggal_bayar:today, metode_pembayaran:"Tunai", keterangan:"",
+            })}>Reset</button>
+            <button type="submit" className="btn btn-primary"><Icon name="check" size={14}/> Simpan Setoran</button>
+          </div>
+        </form>
+      </div>
+
+      <div className="card">
+        <div className="card-hd">
+          <div><h3>Tercatat Sesi Ini</h3><div className="muted" style={{fontSize:12}}>Setoran masuk dari form di sebelah</div></div>
+          <div className="card-hd-actions"><span className="badge badge-accent tab-num">{saved.length} entri</span></div>
+        </div>
+        {saved.length === 0 ? (
+          <div className="empty-state">
+            <Icon name="receipt" size={36}/>
+            <div>Belum ada setoran dicatat sesi ini.</div>
+            <div style={{fontSize:12,marginTop:4}}>Form di sebelah kiri akan menambahkan entri di sini.</div>
+          </div>
+        ) : (
+          <div style={{maxHeight:520,overflowY:"auto"}}>
+            {saved.map(s => (
+              <div key={s.id_pembayaran} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 18px",borderBottom:"1px solid var(--line-2)"}}>
+                <Avatar name={s._kel_name} size="sm"/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>{s._kel_name}</div>
+                  <div style={{fontSize:11.5,color:"var(--muted)"}}>{s._jenis_name} · {S.BULAN_ID[s.bulan-1]} {s.tahun} · {s.metode_pembayaran}</div>
+                </div>
+                <div className="tab-num" style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>+{fmt(s.nominal)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RekapBulanan({ currency }) {
+  const S = window.STM;
+  const [bulan, setBulan] = React.useState(5);
+  const [tahun, setTahun] = React.useState(2026);
+  const fmt = (v) => S.formatCurrency(v, currency);
+  const fmtC = (v) => S.formatCurrencyCompact(v, currency);
+
+  const pays = S.pembayaranBulan(bulan, tahun);
+  const total = pays.reduce((s,p) => s + p.nominal, 0);
+  const perJenis = {};
+  for (const j of S.JENIS_IURAN) perJenis[j.id_jenis] = 0;
+  for (const p of pays) perJenis[p.id_jenis] += p.nominal;
+
+  const map = new Map();
+  for (const p of pays) {
+    if (!map.has(p.id_keluarga)) map.set(p.id_keluarga, { perJenis:{}, total:0, count:0 });
+    const row = map.get(p.id_keluarga);
+    row.perJenis[p.id_jenis] = (row.perJenis[p.id_jenis] || 0) + p.nominal;
+    row.total += p.nominal; row.count += 1;
+  }
+  const rows = Array.from(map.entries()).map(([id,r]) => ({ k: S.KELUARGA.find(x => x.id_keluarga === id), ...r })).sort((a,b) => b.total - a.total);
+
+  return (
+    <div className="grid" style={{gap:16}}>
+      <div className="card">
+        <div className="card-hd" style={{flexWrap:"wrap"}}>
+          <div>
+            <h3>Rekap Setoran {S.BULAN_ID_FULL[bulan-1]} {tahun}</h3>
+            <div className="muted" style={{fontSize:12}}>Akumulasi setoran tabungan untuk periode terpilih</div>
+          </div>
+          <div className="card-hd-actions" style={{gap:8,flexWrap:"wrap"}}>
+            <select className="select" style={{width:130}} value={bulan} onChange={e => setBulan(Number(e.target.value))}>
+              {S.BULAN_ID_FULL.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
+            </select>
+            <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
+              {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+            </select>
+            <button className="btn btn-sec btn-sm"><Icon name="file_excel" size={14}/> Excel</button>
+            <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
+          </div>
+        </div>
+        <div className="card-pad" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,borderBottom:"1px solid var(--line)"}}>
+          <div><div className="stat-lbl">Total Masuk</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total)}</div></div>
+          <div><div className="stat-lbl">Transaksi</div><div className="stat-val tab-num" style={{fontSize:22}}>{pays.length}</div></div>
+          <div><div className="stat-lbl">Anggota Setor</div><div className="stat-val tab-num" style={{fontSize:22}}>{rows.length}</div></div>
+          <div><div className="stat-lbl">Rata-rata / Anggota</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(rows.length===0?0:total/rows.length)}</div></div>
+        </div>
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width:42}}>#</th>
+                <th>Kepala Keluarga</th>
+                {S.JENIS_IURAN.map(j => <th key={j.id_jenis} style={{textAlign:"right"}}>{j.nama_jenis}</th>)}
+                <th style={{textAlign:"right"}}>Transaksi</th>
+                <th style={{textAlign:"right"}}>Total Setor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr><td colSpan={4+S.JENIS_IURAN.length}><div className="empty-state"><Icon name="receipt" size={28}/><div>Belum ada setoran pada periode ini.</div></div></td></tr>
+              )}
+              {rows.map((r,i) => (
+                <tr key={r.k.id_keluarga}>
+                  <td className="tab-num" style={{color:"var(--muted)"}}>{i+1}</td>
+                  <td>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <Avatar name={r.k.kepala_keluarga} size="sm"/>
+                      <div>
+                        <div style={{fontWeight:600,color:"var(--ink)"}}>{r.k.kepala_keluarga}</div>
+                        <div className="tab-num" style={{fontSize:11,color:"var(--muted)"}}>{r.k.no_anggota}</div>
+                      </div>
+                    </div>
+                  </td>
+                  {S.JENIS_IURAN.map(j => (
+                    <td key={j.id_jenis} className="tbl-num" style={{color:(r.perJenis[j.id_jenis]||0)===0?"var(--muted)":"var(--ink)"}}>
+                      {(r.perJenis[j.id_jenis]||0)===0?"—":fmt(r.perJenis[j.id_jenis])}
+                    </td>
+                  ))}
+                  <td className="tbl-num">{r.count}×</td>
+                  <td className="tbl-num"><b>{fmt(r.total)}</b></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{background:"var(--surface-2)",fontWeight:700}}>
+                <td colSpan={2} style={{padding:"12px 16px"}}>Total Kolom</td>
+                {S.JENIS_IURAN.map(j => (
+                  <td key={j.id_jenis} className="tbl-num" style={{padding:"12px 16px",borderTop:"2px solid var(--ink-2)"}}>{fmt(perJenis[j.id_jenis])}</td>
+                ))}
+                <td className="tbl-num" style={{padding:"12px 16px",borderTop:"2px solid var(--ink-2)"}}>{pays.length}</td>
+                <td className="tbl-num" style={{padding:"12px 16px",borderTop:"2px solid var(--ink-2)"}}>{fmt(total)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RekapTahunan({ currency }) {
+  const S = window.STM;
+  const [tahun, setTahun] = React.useState(2026);
+  const fmt = (v) => S.formatCurrency(v, currency);
+  const fmtC = (v) => S.formatCurrencyCompact(v, currency);
+
+  const perBulan = S.pemasukanBulanan(tahun);
+  const total = perBulan.reduce((a,b) => a + b, 0);
+  const perJenis = S.pemasukanPerJenis(tahun);
+  const allYears = S.pemasukanPerTahun();
+  const running = (() => { let acc = 0; return perBulan.map(v => { if (v > 0) acc += v; return acc; }); })();
+
+  return (
+    <div className="grid" style={{gap:16}}>
+      <div className="card">
+        <div className="card-hd">
+          <div><h3>Rekap Tahunan {tahun}</h3><div className="muted" style={{fontSize:12}}>Komparasi setoran bulanan & breakdown jenis tabungan</div></div>
+          <div className="card-hd-actions">
+            <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
+              {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+            </select>
+            <button className="btn btn-sec btn-sm"><Icon name="file_excel" size={14}/> Excel</button>
+            <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
+          </div>
+        </div>
+        <div className="card-pad" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,borderBottom:"1px solid var(--line)"}}>
+          <div><div className="stat-lbl">Total {tahun}</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total)}</div></div>
+          <div><div className="stat-lbl">Rata-rata Bulanan</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total/Math.max(1,perBulan.filter(v=>v>0).length))}</div></div>
+          <div>
+            <div className="stat-lbl">Bulan Tertinggi</div>
+            <div className="stat-val tab-num" style={{fontSize:22}}>
+              {S.BULAN_ID[perBulan.indexOf(Math.max(...perBulan))]}
+              <span style={{fontSize:13,color:"var(--muted)",fontWeight:500}}> · {fmtC(Math.max(...perBulan))}</span>
+            </div>
+          </div>
+          <div><div className="stat-lbl">Saldo Akhir Tahun</div><div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(running[running.length-1]||0)}</div></div>
+        </div>
+        <div className="chart-wrap">
+          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Setoran per Bulan</div>
+          <BarChart data={perBulan} labels={S.BULAN_ID} height={240} formatY={fmtC}/>
+        </div>
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>Bulan</th>
+                {S.JENIS_IURAN.map(j => <th key={j.id_jenis} style={{textAlign:"right"}}>{j.nama_jenis}</th>)}
+                <th style={{textAlign:"right"}}>Total</th>
+                <th style={{textAlign:"right"}}>Saldo Berjalan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {S.BULAN_ID_FULL.map((b,i) => {
+                const pays = S.PEMBAYARAN.filter(p => p.tahun === tahun && p.bulan === i+1);
+                const perJ = {};
+                for (const j of S.JENIS_IURAN) perJ[j.id_jenis] = 0;
+                for (const p of pays) perJ[p.id_jenis] += p.nominal;
+                const t = pays.reduce((s,p) => s + p.nominal, 0);
+                const isF = t === 0;
+                return (
+                  <tr key={i} style={isF?{opacity:.4}:{}}>
+                    <td><b>{b}</b></td>
+                    {S.JENIS_IURAN.map(j => <td key={j.id_jenis} className="tbl-num">{perJ[j.id_jenis]===0?"—":fmt(perJ[j.id_jenis])}</td>)}
+                    <td className="tbl-num"><b>{isF?"—":fmt(t)}</b></td>
+                    <td className="tbl-num" style={{color:"var(--accent)"}}><b>{isF?"—":fmt(running[i])}</b></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr style={{background:"var(--surface-2)",fontWeight:700}}>
+                <td style={{padding:"12px 16px"}}>Total {tahun}</td>
+                {S.JENIS_IURAN.map(j => (
+                  <td key={j.id_jenis} className="tbl-num" style={{padding:"12px 16px",borderTop:"2px solid var(--ink-2)"}}>{fmt(perJenis.find(x=>x.jenis.id_jenis===j.id_jenis)?.total||0)}</td>
+                ))}
+                <td className="tbl-num" style={{padding:"12px 16px",borderTop:"2px solid var(--ink-2)"}}>{fmt(total)}</td>
+                <td style={{borderTop:"2px solid var(--ink-2)"}}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-hd">
+          <div><h3>Perbandingan Multi-Tahun</h3><div className="muted" style={{fontSize:12}}>Total setoran per tahun</div></div>
+        </div>
+        <div className="card-pad">
+          {allYears.map(y => {
+            const max = Math.max(...allYears.map(a => a.total));
+            const pct = (y.total / max) * 100;
+            return (
+              <div key={y.tahun} style={{display:"flex",alignItems:"center",gap:14,padding:"10px 0",borderBottom:"1px solid var(--line-2)"}}>
+                <div style={{width:60,fontWeight:700}}>{y.tahun}</div>
+                <div style={{flex:1,height:14,background:"var(--surface-2)",borderRadius:7,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${pct}%`,background:y.tahun===2026?"var(--accent)":"var(--success)",borderRadius:7,transition:"width .3s"}}/>
+                </div>
+                <div className="tab-num" style={{width:140,textAlign:"right",fontWeight:700}}>{fmt(y.total)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan });
+  </script>
+
+  <!-- screens-admin -->
+  <script type="text/babel">
+function JenisIuran({ currency }) {
+  const S = window.STM;
+  const toast = useToast();
+  const [list, setList] = React.useState(S.JENIS_IURAN);
+  const [edit, setEdit] = React.useState(null);
+  const fmt = (v) => S.formatCurrency(v, currency);
+  const usage = (id) => S.PEMBAYARAN.filter(p => p.id_jenis === id).length;
+  const total = (id) => S.PEMBAYARAN.filter(p => p.id_jenis === id).reduce((s,p) => s+p.nominal, 0);
+
+  return (
+    <div className="card">
+      <div className="card-hd">
+        <div><h3>Jenis Tabungan</h3><div className="muted" style={{fontSize:12}}>Kategori setoran & nominal default</div></div>
+        <div className="card-hd-actions">
+          <button className="btn btn-primary btn-sm" onClick={() => setEdit({id_jenis:null,nama_jenis:"",nominal_default:10000,tipe:"tabungan"})}>
+            <Icon name="plus" size={14}/> Tambah Jenis
+          </button>
+        </div>
+      </div>
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th style={{textAlign:"right"}}>Nominal Default</th>
+              <th className="tab-num" style={{textAlign:"right"}}>Transaksi</th>
+              <th className="tab-num" style={{textAlign:"right"}}>Akumulasi</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map(j => (
+              <tr key={j.id_jenis}>
+                <td>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:28,height:28,borderRadius:8,background:"var(--accent-soft)",color:"var(--accent-2)",display:"grid",placeItems:"center"}}>
+                      <Icon name="tag" size={14}/>
+                    </div>
+                    <b style={{color:"var(--ink)"}}>{j.nama_jenis}</b>
+                  </div>
+                </td>
+                <td className="tbl-num"><b>{fmt(j.nominal_default)}</b></td>
+                <td className="tbl-num">{usage(j.id_jenis)}</td>
+                <td className="tbl-num"><b>{fmt(total(j.id_jenis))}</b></td>
+                <td>
+                  <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
+                    <button className="btn btn-sec btn-sm" onClick={() => setEdit(j)}><Icon name="edit" size={12}/> Edit</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Modal open={!!edit} onClose={() => setEdit(null)}
+             title={edit?.id_jenis ? "Edit Jenis Tabungan" : "Tambah Jenis Tabungan"} width="520px"
+             footer={<>
+               <button className="btn btn-ghost" onClick={() => setEdit(null)}>Batal</button>
+               <button className="btn btn-primary" onClick={() => {
+                 if (!edit.nama_jenis.trim()) { toast({kind:"error",title:"Nama wajib diisi"}); return; }
+                 if (edit.id_jenis) {
+                   setList(list.map(x => x.id_jenis===edit.id_jenis?edit:x));
+                   toast({kind:"success",title:"Jenis tabungan diperbarui",body:edit.nama_jenis});
+                 } else {
+                   const id = Math.max(...list.map(x => x.id_jenis)) + 1;
+                   setList([...list,{...edit,id_jenis:id}]);
+                   toast({kind:"success",title:"Jenis tabungan ditambahkan",body:edit.nama_jenis});
+                 }
+                 setEdit(null);
+               }}><Icon name="check" size={14}/> Simpan</button>
+             </>}>
+        {edit && (
+          <div className="grid" style={{gap:14}}>
+            <div className="field">
+              <label>Nama Jenis</label>
+              <input className="input" value={edit.nama_jenis} onChange={e => setEdit({...edit,nama_jenis:e.target.value})} placeholder="cth. Tabungan Pendidikan"/>
+            </div>
+            <div className="field">
+              <label>Nominal Default</label>
+              <div className="input-wrap">
+                <span className="input-prefix">{currency==="idr"?"IDR":"Rp"}</span>
+                <input className="input" data-prefix="1" type="number" value={edit.nominal_default} onChange={e => setEdit({...edit,nominal_default:Number(e.target.value)||0})}/>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function UsersAdmin() {
+  const S = window.STM;
+  const [list, setList] = React.useState(S.USERS);
+  const [edit, setEdit] = React.useState(null);
+  const toast = useToast();
+  return (
+    <div className="card">
+      <div className="card-hd">
+        <div><h3>User & Pengurus</h3><div className="muted" style={{fontSize:12}}>Akses sistem hanya untuk admin & bendahara</div></div>
+        <div className="card-hd-actions">
+          <button className="btn btn-primary btn-sm" onClick={() => setEdit({id_user:null,nama:"",username:"",role:"bendahara"})}>
+            <Icon name="plus" size={14}/> Tambah User
+          </button>
+        </div>
+      </div>
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Login Terakhir</th><th></th></tr></thead>
+          <tbody>
+            {list.map(u => (
+              <tr key={u.id_user}>
+                <td>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <Avatar name={u.nama} size="sm"/>
+                    <div>
+                      <div style={{fontWeight:600,color:"var(--ink)"}}>{u.nama}</div>
+                      <div style={{fontSize:11.5,color:"var(--muted)"}}>ID: {u.id_user}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="tab-num">@{u.username}</td>
+                <td>
+                  {u.role==="admin"
+                    ? <span className="badge badge-accent">Administrator</span>
+                    : <span className="badge badge-green">Bendahara</span>}
+                </td>
+                <td className="tab-num" style={{fontSize:12.5}}>{u.last_login}</td>
+                <td>
+                  <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
+                    <button className="btn btn-sec btn-sm" onClick={() => setEdit(u)}><Icon name="edit" size={12}/> Edit</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => toast({kind:"info",title:"Reset password terkirim",body:`Tautan dikirim ke ${u.nama}`})}>
+                      <Icon name="settings" size={12}/>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Modal open={!!edit} onClose={() => setEdit(null)} title={edit?.id_user?"Edit User":"Tambah User"} width="520px"
+             footer={<>
+               <button className="btn btn-ghost" onClick={() => setEdit(null)}>Batal</button>
+               <button className="btn btn-primary" onClick={() => {
+                 if (!edit.nama||!edit.username){toast({kind:"error",title:"Lengkapi data"});return;}
+                 if (edit.id_user){setList(list.map(x=>x.id_user===edit.id_user?edit:x));toast({kind:"success",title:"User diperbarui",body:edit.nama});}
+                 else{const id=Math.max(...list.map(x=>x.id_user))+1;setList([...list,{...edit,id_user:id,last_login:"—"}]);toast({kind:"success",title:"User ditambahkan",body:edit.nama});}
+                 setEdit(null);
+               }}><Icon name="check" size={14}/> Simpan</button>
+             </>}>
+        {edit && (
+          <div className="grid" style={{gap:14}}>
+            <div className="field"><label>Nama Lengkap</label>
+              <input className="input" value={edit.nama} onChange={e => setEdit({...edit,nama:e.target.value})}/>
+            </div>
+            <div className="grid grid-2">
+              <div className="field"><label>Username</label>
+                <input className="input" value={edit.username} onChange={e => setEdit({...edit,username:e.target.value})}/>
+              </div>
+              <div className="field"><label>Role</label>
+                <select className="select" value={edit.role} onChange={e => setEdit({...edit,role:e.target.value})}>
+                  <option value="admin">Administrator</option>
+                  <option value="bendahara">Bendahara</option>
+                </select>
+              </div>
+            </div>
+            <div className="field"><label>Password Baru <span className="muted" style={{fontWeight:400}}>(kosongkan jika tidak diubah)</span></label>
+              <input className="input" type="password" placeholder="••••••••"/>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function Aktivitas() {
+  const S = window.STM;
+  const [filter, setFilter] = React.useState("Semua");
+  const iconMap = { payment:"money", create:"plus", update:"edit", auth:"user", export:"download", warn:"alert" };
+  const colorMap = { payment:"var(--success)", create:"var(--accent)", update:"var(--info)", auth:"var(--muted)", export:"var(--accent-2)", warn:"var(--danger)" };
+  const list = filter === "Semua" ? S.AKTIVITAS : S.AKTIVITAS.filter(a => a.tipe === filter);
+  const grouped = {};
+  for (const a of list) { const d = a.waktu.slice(0,10); (grouped[d] = grouped[d] || []).push(a); }
+  const days = Object.keys(grouped).sort().reverse();
+
+  return (
+    <div className="card">
+      <div className="card-hd">
+        <div><h3>Riwayat Aktivitas Admin</h3><div className="muted" style={{fontSize:12}}>Log aksi pengurus pada sistem · {S.AKTIVITAS.length} entri</div></div>
+        <div className="card-hd-actions">
+          <div className="seg">
+            {["Semua","payment","create","update","export","warn","auth"].map(t => (
+              <button key={t} data-active={filter===t?"1":"0"} onClick={() => setFilter(t)}>
+                {t==="Semua"?"Semua":t}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="card-pad">
+        {days.map(d => (
+          <div key={d} style={{marginBottom:24}}>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10,paddingLeft:42}}>{d}</div>
+            <div style={{position:"relative",paddingLeft:14}}>
+              <div style={{position:"absolute",left:28,top:0,bottom:0,width:2,background:"var(--line)"}}/>
+              {grouped[d].map(a => (
+                <div key={a.id} style={{display:"flex",alignItems:"flex-start",gap:14,padding:"8px 0",position:"relative"}}>
+                  <div style={{width:30,height:30,borderRadius:8,background:"var(--surface-2)",color:colorMap[a.tipe],display:"grid",placeItems:"center",border:"2px solid var(--surface)",zIndex:1,boxShadow:"0 0 0 1px var(--line)",flexShrink:0}}>
+                    <Icon name={iconMap[a.tipe]||"history"} size={14}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,color:"var(--ink-2)"}}><b style={{color:"var(--ink)"}}>{a.user}</b> {a.aksi.toLowerCase()}</div>
+                    <div style={{fontSize:12,color:"var(--muted)",marginTop:1}}>{a.detail}</div>
+                  </div>
+                  <div className="tab-num" style={{fontSize:11.5,color:"var(--muted)",whiteSpace:"nowrap"}}>{a.waktu.slice(11)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PrintPreview({ currency }) {
+  const S = window.STM;
+  const [bulan, setBulan] = React.useState(4);
+  const [tahun, setTahun] = React.useState(2026);
+  const fmt = (v) => S.formatCurrency(v, currency);
+  const toast = useToast();
+
+  const pays = S.pembayaranBulan(bulan, tahun);
+  const total = pays.reduce((s,p) => s + p.nominal, 0);
+  const map = new Map();
+  for (const p of pays) {
+    if (!map.has(p.id_keluarga)) map.set(p.id_keluarga, {perJenis:{},total:0});
+    const row = map.get(p.id_keluarga);
+    row.perJenis[p.id_jenis] = (row.perJenis[p.id_jenis]||0) + p.nominal;
+    row.total += p.nominal;
+  }
+  const rows = Array.from(map.entries()).map(([idK,r]) => ({ keluarga: S.KELUARGA.find(k=>k.id_keluarga===idK), ...r })).sort((a,b)=>b.total-a.total);
+
+  return (
+    <div>
+      <div className="card mb-16">
+        <div className="card-hd">
+          <div><h3>Cetak & Export</h3><div className="muted" style={{fontSize:12}}>Pratinjau laporan A4 sebelum dicetak atau di-export</div></div>
+          <div className="card-hd-actions">
+            <select className="select" style={{width:140}} value={bulan} onChange={e => setBulan(Number(e.target.value))}>
+              {S.BULAN_ID_FULL.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
+            </select>
+            <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
+              {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+            </select>
+            <button className="btn btn-sec btn-sm" onClick={() => toast({kind:"success",title:"Excel siap diunduh",body:`Rekap-${S.BULAN_ID[bulan-1]}-${tahun}.xlsx`})}>
+              <Icon name="file_excel" size={14}/> Excel
+            </button>
+            <button className="btn btn-sec btn-sm" onClick={() => toast({kind:"success",title:"PDF siap diunduh",body:`Rekap-${S.BULAN_ID[bulan-1]}-${tahun}.pdf`})}>
+              <Icon name="file_pdf" size={14}/> PDF
+            </button>
+            <button className="btn btn-dark btn-sm" onClick={() => window.print()}>
+              <Icon name="print" size={14}/> Print
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"center",padding:"20px 0"}}>
+        <div className="print-page">
+          <div className="print-hd">
+            <div><h1>LAPORAN REKAP TABUNGAN</h1><h2>STM Dos Ni Roha · {S.BULAN_ID_FULL[bulan-1]} {tahun}</h2></div>
+            <div className="print-meta">
+              <div>Dicetak: 18 Mei 2026</div>
+              <div>Oleh: Robert Marpaung</div>
+              <div>Periode: {S.BULAN_ID_FULL[bulan-1]} {tahun}</div>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginTop:20,fontSize:11}}>
+            {[["Total Setor",fmt(total)],["Transaksi",pays.length],["Anggota Setor",rows.length],["Rata-rata",fmt(rows.length?total/rows.length:0)]].map(([l,v])=>(
+              <div key={l} style={{padding:"10px 12px",background:"#f6efe1",borderRadius:6}}>
+                <div style={{color:"#777",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600,fontSize:10}}>{l}</div>
+                <div style={{fontSize:15,fontWeight:700,marginTop:2}} className="tab-num">{v}</div>
+              </div>
+            ))}
+          </div>
+          <table className="print-tbl">
+            <thead>
+              <tr>
+                <th style={{width:28}}>#</th>
+                <th>Anggota</th>
+                {S.JENIS_IURAN.map(j => <th key={j.id_jenis} className="num">{j.nama_jenis}</th>)}
+                <th className="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(0, 20).map((r,i) => (
+                <tr key={r.keluarga?.id_keluarga}>
+                  <td className="num">{i+1}</td>
+                  <td>
+                    <div style={{fontWeight:600}}>{r.keluarga?.kepala_keluarga}</div>
+                    <div style={{fontSize:10,color:"#777"}} className="tab-num">{r.keluarga?.no_anggota}</div>
+                  </td>
+                  {S.JENIS_IURAN.map(j => <td key={j.id_jenis} className="num">{r.perJenis[j.id_jenis]?fmt(r.perJenis[j.id_jenis]):"—"}</td>)}
+                  <td className="num"><b>{fmt(r.total)}</b></td>
+                </tr>
+              ))}
+              {rows.length > 20 && (
+                <tr><td colSpan={3+S.JENIS_IURAN.length} style={{textAlign:"center",fontStyle:"italic",color:"#777"}}>
+                  … {rows.length-20} baris lainnya (halaman berikutnya)
+                </td></tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2}>TOTAL</td>
+                {S.JENIS_IURAN.map(j => { const t=pays.filter(p=>p.id_jenis===j.id_jenis).reduce((s,p)=>s+p.nominal,0); return <td key={j.id_jenis} className="num">{fmt(t)}</td>; })}
+                <td className="num">{fmt(total)}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div className="print-ft">
+            <div>
+              <div>Catatan:</div>
+              <div style={{marginTop:4,maxWidth:280,color:"#888"}}>Laporan ini dihasilkan otomatis oleh sistem tabungan STM Dos Ni Roha. Mohon konfirmasi nominal sebelum disahkan dalam rapat pengurus.</div>
+            </div>
+            <div className="print-sign"><div>Mengetahui,</div><div className="line">Bendahara STM</div></div>
+            <div className="print-sign"><div>Disusun oleh,</div><div className="line">Admin Sistem</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { JenisIuran, UsersAdmin, Aktivitas, PrintPreview });
+  </script>
+
+  <!-- app -->
+  <script type="text/babel">
+const TWEAK_DEFAULTS = {
+  "palette": ["#b8694a", "#7a8c4d", "#4a6f8a"],
+  "density": "cozy",
+  "sidebar": "expanded",
+  "currency": "rp",
+  "font": "Plus Jakarta Sans"
+};
+
+const PALETTES = {
+  "Terracotta · Olive · Indigo": { value:["#b8694a","#7a8c4d","#4a6f8a"], accent:"#b8694a",accent2:"#9a5638",accentSoft:"#f2d9c8",success:"#6f8a3f",sidebar:"#2a1d12",sidebar2:"#3a281a",bg:"#f6efe1",bg2:"#faf5e9",ink:"#2a1d12",line:"#e6d9bd",line2:"#efe4ca" },
+  "Burgundy · Sage · Cream":     { value:["#9a3b3b","#7a8c4d","#e8dbc1"], accent:"#9a3b3b",accent2:"#7c2e2e",accentSoft:"#f0d4d4",success:"#6f8a3f",sidebar:"#2a1818",sidebar2:"#3c2424",bg:"#f5ece0",bg2:"#faf3e8",ink:"#2a1818",line:"#e6d6c0",line2:"#efe2cc" },
+  "Coffee · Caramel · Mocha":    { value:["#8b5a2b","#c8893a","#3a2818"], accent:"#8b5a2b",accent2:"#6e4220",accentSoft:"#ecd6b8",success:"#6f8a3f",sidebar:"#241712",sidebar2:"#34241c",bg:"#f5ebd9",bg2:"#fbf2e3",ink:"#241712",line:"#e4d4b4",line2:"#ede0c4" },
+  "Forest · Moss · Stone":       { value:["#4d6b3a","#7a8c4d","#3a3528"], accent:"#4d6b3a",accent2:"#3a5429",accentSoft:"#d5e0c2",success:"#6f8a3f",sidebar:"#1f2418",sidebar2:"#2c3422",bg:"#f1eee0",bg2:"#f7f4e8",ink:"#22281b",line:"#dcd8c3",line2:"#e5e2d0" },
+};
+const PALETTE_NAMES = Object.keys(PALETTES);
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [route, setRoute] = React.useState("dashboard");
+  const [search, setSearch] = React.useState("");
+  const [presetKeluarga, setPresetKeluarga] = React.useState(null);
+
+  React.useEffect(() => {
+    const match = Object.entries(PALETTES).find(([_, p]) => JSON.stringify(p.value) === JSON.stringify(t.palette));
+    const p = match ? match[1] : PALETTES[PALETTE_NAMES[0]];
+    const r = document.documentElement.style;
+    r.setProperty("--accent", p.accent); r.setProperty("--accent-2", p.accent2); r.setProperty("--accent-soft", p.accentSoft);
+    r.setProperty("--success", p.success); r.setProperty("--sidebar", p.sidebar); r.setProperty("--sidebar-2", p.sidebar2);
+    r.setProperty("--bg", p.bg); r.setProperty("--bg-2", p.bg2); r.setProperty("--ink", p.ink);
+    r.setProperty("--line", p.line); r.setProperty("--line-2", p.line2);
+  }, [t.palette]);
+
+  React.useEffect(() => {
+    document.documentElement.style.setProperty("--font", `'${t.font}', ui-sans-serif, system-ui, sans-serif`);
+  }, [t.font]);
+
+  const goAddPayment = (kel) => { setPresetKeluarga(kel); setRoute("input"); };
+
+  const titles = {
+    dashboard:    ["Dashboard",          "Ringkasan saldo tabungan & tren setoran"],
+    keluarga:     ["Daftar Keluarga",    "Anggota terdaftar pada STM Dos Ni Roha"],
+    input:        ["Input Setoran",      "Catat setoran tabungan anggota"],
+    "rekap-bulan":["Rekap Bulanan",      "Setoran agregat per bulan"],
+    "rekap-tahun":["Rekap Tahunan",      "Perbandingan tahunan & multi-tahun"],
+    print:        ["Cetak / Export",     "Pratinjau laporan A4 & ekspor file"],
+    jenis:        ["Jenis Tabungan",     "Konfigurasi kategori setoran"],
+    users:        ["User & Pengurus",    "Akses sistem admin & bendahara"],
+    aktivitas:    ["Riwayat Aktivitas",  "Audit log aksi pengurus"],
+  };
+  const [title, crumb] = titles[route] || titles.dashboard;
+
+  const renderScreen = () => {
+    switch (route) {
+      case "dashboard":    return <Dashboard setRoute={setRoute} currency={t.currency}/>;
+      case "keluarga":     return <Keluarga search={search} setSearch={setSearch} currency={t.currency} onAddPayment={goAddPayment}/>;
+      case "input":        return <InputPembayaran presetKeluarga={presetKeluarga} currency={t.currency}/>;
+      case "rekap-bulan":  return <RekapBulanan currency={t.currency}/>;
+      case "rekap-tahun":  return <RekapTahunan currency={t.currency}/>;
+      case "print":        return <PrintPreview currency={t.currency}/>;
+      case "jenis":        return <JenisIuran currency={t.currency}/>;
+      case "users":        return <UsersAdmin/>;
+      case "aktivitas":    return <Aktivitas/>;
+      default:             return <Dashboard setRoute={setRoute} currency={t.currency}/>;
+    }
+  };
+
+  const sidebarShowSearch = route === "keluarga";
+  const cyclePalette = () => {
+    const i = PALETTE_NAMES.findIndex(n => JSON.stringify(PALETTES[n].value) === JSON.stringify(t.palette));
+    const next = PALETTES[PALETTE_NAMES[(i + 1) % PALETTE_NAMES.length]].value;
+    setTweak("palette", next);
+  };
+
+  return (
+    <ToastHost>
+      <div className="app" data-sidebar={t.sidebar} data-density={t.density}>
+        <Sidebar route={route} setRoute={(r) => { setRoute(r); if (r !== "input") setPresetKeluarga(null); }}/>
+        <div className="main">
+          <Topbar
+            title={title} crumb={crumb}
+            onToggleSidebar={() => setTweak("sidebar", t.sidebar === "expanded" ? "collapsed" : "expanded")}
+            search={sidebarShowSearch ? search : null}
+            onSearch={sidebarShowSearch ? setSearch : null}
+            rightSlot={
+              <>
+                <button className="tb-icon-btn" onClick={cyclePalette} aria-label="Ganti tema" title="Ganti tema warna">
+                  <span style={{display:"inline-flex",gap:2}}>
+                    {t.palette.slice(0,3).map((c,i) => <span key={i} style={{width:8,height:14,borderRadius:2,background:c}}/>)}
+                  </span>
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={() => { setPresetKeluarga(null); setRoute("input"); }}>
+                  <Icon name="plus" size={14}/> Catat Setoran
+                </button>
+              </>
+            }
+          />
+          <main className="content">{renderScreen()}</main>
+        </div>
+      </div>
+
+      <TweaksPanel>
+        <TweakSection label="Tema">
+          <TweakColor label="Palette" value={t.palette}
+                      options={PALETTE_NAMES.map(n => PALETTES[n].value)}
+                      onChange={(v) => setTweak("palette", v)}/>
+        </TweakSection>
+        <TweakSection label="Tata Letak">
+          <TweakRadio label="Sidebar" value={t.sidebar}
+                      options={[{value:"expanded",label:"Full"},{value:"iconOnly",label:"Ikon"}]}
+                      onChange={(v) => setTweak("sidebar", v)}/>
+          <TweakRadio label="Density Tabel" value={t.density}
+                      options={[{value:"cozy",label:"Cozy"},{value:"compact",label:"Compact"}]}
+                      onChange={(v) => setTweak("density", v)}/>
+        </TweakSection>
+        <TweakSection label="Format & Tipografi">
+          <TweakRadio label="Mata Uang" value={t.currency}
+                      options={[{value:"rp",label:"Rp"},{value:"idr",label:"IDR"}]}
+                      onChange={(v) => setTweak("currency", v)}/>
+          <TweakSelect label="Font" value={t.font}
+                       options={["Plus Jakarta Sans","Inter","Manrope"]}
+                       onChange={(v) => setTweak("font", v)}/>
+        </TweakSection>
+      </TweaksPanel>
+    </ToastHost>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+
+</body>
+</html>
