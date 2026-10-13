@@ -775,8 +775,7 @@ function RekapAkhir({ currency }) {
     const transactions = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(k.id_keluarga));
     const saldoBersih = transactions.reduce((sum,p) => sum + (Number(p.nominal) || 0), 0);
     return { ...k, saldoBersih, transaksi: transactions.length };
-  }).filter(k => k.saldoBersih !== 0)
-    .sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
+  }).sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
   const filtered = families.filter(k => (String(k.kepala_keluarga) + " " + String(k.no_anggota)).toLowerCase().includes(query.trim().toLowerCase()));
   const netBalance = S.PEMBAYARAN.reduce((sum,p) => sum + (Number(p.nominal) || 0), 0);
   const years = Array.from(new Set([...S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite), new Date().getFullYear()])).sort((a,b)=>a-b);
@@ -804,7 +803,7 @@ function RekapAkhir({ currency }) {
         <span className="muted rekap-akhir-count">Menampilkan {filtered.length} dari {families.length} keluarga</span>
       </div>
       <div className="tbl-wrap"><table className="tbl rekap-akhir-table rekap-akhir-savings-table"><thead><tr><th>Keluarga</th><th>Status</th><th className="tbl-num">Saldo Bersih</th></tr></thead><tbody>
-        {filtered.length===0 && <tr><td colSpan={3}><div className="empty-state">Tidak ada keluarga dengan saldo bersih selain Rp 0 yang cocok dengan pencarian.</div></td></tr>}
+        {filtered.length===0 && <tr><td colSpan={3}><div className="empty-state">Tidak ada keluarga yang cocok dengan pencarian.</div></td></tr>}
         {filtered.map(k=><tr key={k.id_keluarga}>
           <td><div className="rekap-family-name"><Avatar name={k.kepala_keluarga} size="sm"/><div><b>{k.kepala_keluarga}</b><small>{k.no_anggota}</small></div></div></td>
           <td><span className={k.status==="aktif"?"badge badge-green":"badge badge-neutral"}>{k.status==="aktif"?"Aktif":"Nonaktif"}</span></td>
