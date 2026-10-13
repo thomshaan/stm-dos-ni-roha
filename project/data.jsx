@@ -230,6 +230,28 @@ function pemasukanPerTahun() {
     .sort((a,b) => a.tahun - b.tahun);
 }
 
+// Persistent browser storage for this prototype. For shared multi-user use, replace with a server database/API.
+const STORAGE_KEY = "stm-dos-ni-roha-v1";
+function persistSTM() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ KELUARGA, JENIS_IURAN, PEMBAYARAN, AKTIVITAS }));
+  } catch (err) { console.error("Gagal menyimpan data STM", err); }
+}
+function restoreSTM() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.KELUARGA) && Array.isArray(data.JENIS_IURAN) && Array.isArray(data.PEMBAYARAN)) {
+      KELUARGA.splice(0, KELUARGA.length, ...data.KELUARGA);
+      JENIS_IURAN.splice(0, JENIS_IURAN.length, ...data.JENIS_IURAN);
+      PEMBAYARAN.splice(0, PEMBAYARAN.length, ...data.PEMBAYARAN);
+      if (Array.isArray(data.AKTIVITAS)) AKTIVITAS.splice(0, AKTIVITAS.length, ...data.AKTIVITAS);
+    }
+  } catch (err) { console.error("Gagal memuat data STM tersimpan", err); }
+}
+restoreSTM();
+
 Object.assign(window, {
   STM: {
     KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS,
@@ -237,6 +259,6 @@ Object.assign(window, {
     formatCurrency, formatCurrencyCompact,
     avatarColor, initials,
     pembayaranByKeluarga, totalKeluarga, pembayaranBulan,
-    pemasukanBulanan, pemasukanPerJenis, pemasukanPerTahun,
+    pemasukanBulanan, pemasukanPerJenis, pemasukanPerTahun, persistSTM,
   }
 });
