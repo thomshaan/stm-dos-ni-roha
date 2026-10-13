@@ -11,6 +11,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const [form, setForm] = React.useState({
     id_keluarga: presetKeluarga?.id_keluarga || "",
     id_jenis: 1,
+    jenis_transaksi: "setoran",
     bulan: currentMonth,
     tahun: currentYear,
     nominal: 25000,
@@ -22,6 +23,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const [entryMode, setEntryMode] = React.useState("single");
   const [bulkFamilies, setBulkFamilies] = React.useState([]);
   const [bulkType, setBulkType] = React.useState(1);
+  const [bulkDirection, setBulkDirection] = React.useState("setoran");
   const [bulkDate, setBulkDate] = React.useState(today);
   const [bulkMonth, setBulkMonth] = React.useState(currentMonth);
   const [bulkYear, setBulkYear] = React.useState(currentYear);
@@ -58,7 +60,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       id_jenis: Number(form.id_jenis),
       bulan: Number(form.bulan),
       tahun: Number(form.tahun),
-      nominal: Number(form.nominal),
+      jenis_transaksi: form.jenis_transaksi || "setoran",
+      nominal: form.jenis_transaksi === "penarikan" ? -Math.abs(Number(form.nominal)) : Math.abs(Number(form.nominal)),
       dicatat_oleh: "Thomas",
       _kel_name: k?.kepala_keluarga,
       _jenis_name: j?.nama_jenis,
@@ -71,15 +74,16 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       id_keluarga: rec.id_keluarga,
       id_jenis: rec.id_jenis,
       bulan: rec.bulan, tahun: rec.tahun, nominal: rec.nominal,
+      jenis_transaksi: rec.jenis_transaksi,
       tanggal_bayar: rec.tanggal_bayar, metode_pembayaran: rec.metode_pembayaran,
       keterangan: rec.keterangan, dicatat_oleh: rec.dicatat_oleh,
     });
-    S.AKTIVITAS.unshift({ id: Date.now(), waktu: new Date().toISOString().slice(0,16).replace("T"," "), user: rec.dicatat_oleh, aksi: "Mencatat setoran", detail: k.kepala_keluarga + " — " + j.nama_jenis, tipe: "payment" });
+    S.AKTIVITAS.unshift({ id: Date.now(), waktu: new Date().toISOString().slice(0,16).replace("T"," "), user: rec.dicatat_oleh, aksi: rec.jenis_transaksi === "penarikan" ? "Mencatat penarikan" : "Mencatat setoran", detail: k.kepala_keluarga + " — " + j.nama_jenis + " · " + S.formatCurrency(Math.abs(rec.nominal)), tipe: "payment" });
     S.persistSTM();
     toast({
       kind:"success",
-      title:`Setoran tercatat`,
-      body:`${k?.kepala_keluarga} — ${j?.nama_jenis} ${S.BULAN_ID_FULL[rec.bulan-1]} ${rec.tahun} · ${S.formatCurrency(rec.nominal, currency)}`,
+      title: rec.jenis_transaksi === "penarikan" ? "Penarikan tercatat" : "Setoran tercatat",
+      body:`${k?.kepala_keluarga} — ${j?.nama_jenis} ${S.BULAN_ID_FULL[rec.bulan-1]} ${rec.tahun} · ${S.formatCurrency(Math.abs(rec.nominal), currency)}`,
     });
     setForm(f => ({ ...f, nominal: S.JENIS_IURAN.find(x => x.id_jenis === f.id_jenis)?.nominal_default || 25000, keterangan: "", id_keluarga: "" }));
     onSaved && onSaved(rec);
@@ -108,9 +112,10 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       id_pembayaran: nextId++,
       id_keluarga: Number(k.id_keluarga),
       id_jenis: Number(bulkType),
+      jenis_transaksi: bulkDirection,
       bulan: Number(bulkMonth),
       tahun: Number(bulkYear),
-      nominal: Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount),
+      nominal: bulkDirection === "penarikan" ? -Math.abs(Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount)) : Math.abs(Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount)),
       tanggal_bayar: bulkDate,
       metode_pembayaran: bulkMethod,
       keterangan: bulkNote.trim(),
@@ -119,12 +124,12 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       _jenis_name: j.nama_jenis,
     }));
     S.PEMBAYARAN.push(...created.map(({_kel_name,_jenis_name,...p}) => p));
-    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Mencatat setoran massal",detail:created.length+" keluarga · "+j.nama_jenis+" · "+bulkDate,tipe:"payment"});
+    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:bulkDirection === "penarikan" ? "Mencatat penarikan massal" : "Mencatat setoran massal",detail:created.length+" keluarga · "+j.nama_jenis+" · "+bulkDate,tipe:"payment"});
     S.persistSTM();
     const next = [...created, ...saved];
     window.__sessionPayments = next;
     setSaved(next);
-    toast({kind:"success",title:"Setoran massal tersimpan",body:created.length+" transaksi berhasil dicatat."});
+    toast({kind:"success",title:bulkDirection === "penarikan" ? "Penarikan massal tersimpan" : "Setoran massal tersimpan",body:created.length+" transaksi berhasil dicatat."});
     setBulkFamilies([]);
     setBulkAmounts({});
     setBulkNote("");
@@ -145,15 +150,16 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
           </div>
         </div>
         {entryMode === "bulk" && <form className="card-pad" onSubmit={submitBulk} style={{display:"grid",gap:14}}>
-          <div className="grid grid-3">
+          <div className="grid grid-4">
+            <div className="field"><label>Jenis Transaksi</label><select className="select" value={bulkDirection} onChange={e=>setBulkDirection(e.target.value)}><option value="setoran">Setoran (uang masuk)</option><option value="penarikan">Penarikan (ambil uang kembali)</option></select></div>
             <div className="field"><label>Jenis Tabungan</label><select className="select" value={bulkType} onChange={e => {const id=Number(e.target.value);const def=Number(S.JENIS_IURAN.find(j=>j.id_jenis===id)?.nominal_default||0);setBulkType(id);setBulkAmounts(prev=>Object.fromEntries(Object.entries(prev).map(([k,v])=>[k,v===Number(S.JENIS_IURAN.find(j=>j.id_jenis===Number(bulkType))?.nominal_default||0)?def:v])));}}>{S.JENIS_IURAN.map(j=><option key={j.id_jenis} value={j.id_jenis}>{j.nama_jenis}</option>)}</select></div>
-            <div className="field"><label>Tanggal Setor</label><input className="input" type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)} required /></div>
-            <div className="field"><label>Metode Setor</label><select className="select" value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}>{S.METODE.map(m=><option key={m} value={m}>{m}</option>)}</select></div>
+            <div className="field"><label>{form.jenis_transaksi === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label><input className="input" type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)} required /></div>
+            <div className="field"><label>{form.jenis_transaksi === "penarikan" ? "Metode Penarikan" : "Metode Setor"}</label><select className="select" value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}>{S.METODE.map(m=><option key={m} value={m}>{m}</option>)}</select></div>
           </div>
           <div className="grid grid-3">
             <div className="field"><label>Bulan Periode</label><select className="select" value={bulkMonth} onChange={e=>setBulkMonth(Number(e.target.value))}>{S.BULAN_ID_FULL.map((b,i)=><option key={i} value={i+1}>{b}</option>)}</select></div>
             <div className="field"><label>Tahun</label><select className="select" value={bulkYear} onChange={e=>setBulkYear(Number(e.target.value))}>{Array.from({length:5},(_,i)=>currentYear-2+i).map(y=><option key={y} value={y}>{y}</option>)}</select></div>
-            <div className="field"><label>Keterangan <span className="muted" style={{fontWeight:400}}>(opsional, untuk semua)</span></label><input className="input" value={bulkNote} onChange={e=>setBulkNote(e.target.value)} placeholder="cth. setoran melalui koordinator"/></div>
+            <div className="field"><label>Keterangan <span className="muted" style={{fontWeight:400}}>(opsional, untuk semua)</span></label><input className="input" value={bulkNote} onChange={e=>setBulkNote(e.target.value)} placeholder={bulkDirection === "penarikan" ? "cth. pengambilan sebagian saldo" : "cth. setoran melalui koordinator"}/></div>
           </div>
           <div className="field">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:8}}>
@@ -173,8 +179,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
             <div className="hint">Nominal setiap keluarga bisa diubah satu per satu. Jenis, tanggal, periode, metode, dan keterangan berlaku untuk semua transaksi yang dipilih.</div>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-            <b>Total {bulkFamilies.length} transaksi · {fmt(bulkFamilies.reduce((sum,id)=>sum+Number(bulkAmounts[id] ?? bulkDefaultAmount),0))}</b>
-            <button type="submit" className="btn btn-primary" disabled={!bulkFamilies.length}><Icon name="check" size={14}/> Simpan {bulkFamilies.length} setoran</button>
+            <b>Total {bulkDirection === "penarikan" ? "penarikan" : "setoran"} · {bulkFamilies.length} transaksi · {fmt(bulkFamilies.reduce((sum,id)=>sum+Number(bulkAmounts[id] ?? bulkDefaultAmount),0))}</b>
+            <button type="submit" className="btn btn-primary" disabled={!bulkFamilies.length}><Icon name="check" size={14}/> Simpan {bulkFamilies.length} {bulkDirection === "penarikan" ? "penarikan" : "setoran"}</button>
           </div>
         </form>}
       </div>
@@ -182,7 +188,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       <div className="card">
         <div className="card-hd">
           <div>
-            <h3>Catat Setoran Baru</h3>
+            <h3>{form.jenis_transaksi === "penarikan" ? "Catat Penarikan" : "Catat Setoran Baru"}</h3>
             <div className="muted" style={{fontSize:12}}>Form dicatat atas nama: <b style={{color:"var(--ink-2)"}}>Thomas (admin)</b></div>
           </div>
         </div>
@@ -200,7 +206,14 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
             </select>
           </div>
 
-          <div className="grid grid-2">
+          <div className="grid grid-3">
+            <div className="field">
+              <label>Jenis Transaksi</label>
+              <select className="select" value={form.jenis_transaksi} onChange={e => setForm(f => ({...f, jenis_transaksi:e.target.value}))}>
+                <option value="setoran">Setoran (uang masuk)</option>
+                <option value="penarikan">Penarikan (ambil uang kembali)</option>
+              </select>
+            </div>
             <div className="field">
               <label>Jenis Tabungan</label>
               <select className="select" value={form.id_jenis}
@@ -211,7 +224,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
               </select>
             </div>
             <div className="field">
-              <label>Nominal</label>
+              <label>Nominal {form.jenis_transaksi === "penarikan" ? "yang Diambil" : "Setoran"}</label>
               <div className="input-wrap">
                 <span className="input-prefix">{currency === "idr" ? "IDR" : "Rp"}</span>
                 <input className="input" type="number" data-prefix="1" min="1000" step="500"
@@ -271,7 +284,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
               tanggal_bayar: today, metode_pembayaran: "Tunai", keterangan: "",
             })}>Reset</button>
             <button type="submit" className="btn btn-primary">
-              <Icon name="check" size={14}/> Simpan Setoran
+              <Icon name="check" size={14}/> {form.jenis_transaksi === "penarikan" ? "Simpan Penarikan" : "Simpan Setoran"}
             </button>
           </div>
         </form>
@@ -309,9 +322,9 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                   <div style={{fontSize:11.5,color:"var(--muted)"}}>{s._jenis_name} · {S.BULAN_ID[s.bulan-1]} {s.tahun} · {s.metode_pembayaran}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div className="tab-num" style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>+{fmt(s.nominal)}</div>
+                  <div className="tab-num" style={{fontSize:13,fontWeight:700,color:s.nominal < 0 ? "var(--danger)" : "var(--success)"}}>{s.nominal < 0 ? "−" : "+"}{fmt(Math.abs(s.nominal))}<div className="muted" style={{fontSize:10,textAlign:"right"}}>{s.nominal < 0 ? "Penarikan" : "Setoran"}</div></div>
                   <button type="button" className="btn btn-sec btn-sm" title="Edit transaksi" onClick={() => {
-                    const amountText = window.prompt("Nominal transaksi (angka)", String(s.nominal));
+                    const amountText = window.prompt("Nominal transaksi (angka, tanpa tanda minus)", String(Math.abs(s.nominal)));
                     if (amountText === null) return;
                     const amount = Number(amountText);
                     if (!Number.isFinite(amount) || amount < 1000) { toast({kind:"error",title:"Nominal tidak valid"}); return; }
@@ -323,12 +336,13 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                     const target = S.PEMBAYARAN.find(p => p.id_pembayaran === s.id_pembayaran);
                     if (!target) { toast({kind:"error",title:"Transaksi tidak ditemukan"}); return; }
                     const before = target.nominal;
-                    target.nominal = amount;
+                    target.nominal = before < 0 || s.jenis_transaksi === "penarikan" ? -Math.abs(amount) : Math.abs(amount);
+                    target.jenis_transaksi = target.nominal < 0 ? "penarikan" : "setoran";
                     target.tanggal_bayar = date;
                     target.bulan = Number(date.slice(5,7));
                     target.tahun = Number(date.slice(0,4));
                     target.keterangan = note.trim();
-                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Mengubah transaksi",detail:"ID "+s.id_pembayaran+" · "+S.formatCurrency(before)+" -> "+S.formatCurrency(amount),tipe:"update"});
+                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Mengubah transaksi",detail:"ID "+s.id_pembayaran+" · "+S.formatCurrency(before)+" -> "+S.formatCurrency(target.nominal),tipe:"update"});
                     S.persistSTM();
                     const next = [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p,_kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan",_jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"}));
                     window.__sessionPayments = next;
@@ -336,7 +350,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                     toast({kind:"success",title:"Transaksi diperbarui",body:"Perubahan tersimpan di browser ini."});
                   }}><Icon name="edit" size={12}/> Edit</button>
                   <button type="button" className="btn btn-ghost btn-sm" title="Hapus transaksi" onClick={() => {
-                    if (!window.confirm(`Hapus transaksi ${S.formatCurrency(s.nominal)} dari ${s._kel_name} pada ${s.tanggal_bayar}? Tindakan ini tidak dapat dibatalkan.`)) return;
+                    if (!window.confirm(`Hapus ${s.nominal < 0 ? "penarikan" : "setoran"} ${S.formatCurrency(Math.abs(s.nominal))} dari ${s._kel_name} pada ${s.tanggal_bayar}? Tindakan ini tidak dapat dibatalkan.`)) return;
                     const index = S.PEMBAYARAN.findIndex(x => x.id_pembayaran === s.id_pembayaran);
                     if (index < 0) { toast({kind:"error",title:"Transaksi tidak ditemukan"}); return; }
                     const [removed] = S.PEMBAYARAN.splice(index, 1);
