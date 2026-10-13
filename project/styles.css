@@ -97,6 +97,9 @@ button{font-family:inherit}
 .app[data-sidebar="iconOnly"] .sb-foot{padding-left:0;justify-content:center}
 
 .family-autocomplete{min-width:0}
+.family-selected-chip{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--success-soft);border-radius:9px;background:var(--success-soft);color:var(--success);font-size:12px}
+.family-selected-chip span{flex:1;min-width:0}
+.family-selected-chip button{border:0;background:transparent;color:var(--success);font:inherit;font-weight:700;cursor:pointer;padding:2px 4px}
 .family-suggestions{position:absolute;z-index:45;top:calc(100% + 4px);left:0;right:0;max-height:260px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(42,29,18,.16);padding:4px}
 .family-suggestion{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:var(--ink);cursor:pointer;font:inherit}
 .family-suggestion:hover,.family-suggestion.is-selected{background:var(--accent-soft)}
@@ -377,7 +380,7 @@ button{font-family:inherit}
   .card-hd-actions{flex-wrap:wrap}
   .grid-3,.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
   .rekap-akhir-summary{grid-template-columns:1fr 1fr}
-  .rekap-akhir-summary .stat:last-child{grid-column:1 / -1}
+  
   .rekap-akhir-toolbar .card-hd-actions{margin-left:0}
 }
 @media (max-width: 480px) {
