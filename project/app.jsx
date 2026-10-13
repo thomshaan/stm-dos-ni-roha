@@ -105,7 +105,7 @@ function App() {
 
   return (
     <ToastHost>
-      <div className="app" data-sidebar={t.sidebar} data-density={t.density}>
+      <div className="app" data-route={route} data-sidebar={t.sidebar} data-density={t.density}>
         <Sidebar route={route} setRoute={(r) => { setRoute(r); if (r !== "input") setPresetKeluarga(null); }}/>
         <div className="main">
           <Topbar
@@ -128,7 +128,7 @@ function App() {
               </>
             }
           />
-          <main className="content">{React.cloneElement(renderScreen(), { key: dataVersion })}</main>
+          <main className="content">{renderScreen()}</main>
         </div>
       </div>
 
