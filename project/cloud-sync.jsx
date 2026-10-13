@@ -1,4 +1,5 @@
 // Google Sheets cloud storage. OAuth token is kept in memory only; no client secret is stored in the site.
+const { Icon } = window;
 (() => {
   const CONFIG_KEY = "stm-google-sheets-config-v1";
   const READY_KEY = "stm-google-sheets-ready-v1";
@@ -238,12 +239,13 @@ function CloudSettings() {
     const id = clientId.trim();
     if (!id.endsWith(".apps.googleusercontent.com")) {
       setError("OAuth Client ID belum valid. Biasanya berakhir dengan .apps.googleusercontent.com");
-      return;
+      return false;
     }
     const next = S.writeConfig({ clientId: id, spreadsheetId: spreadsheetId.trim(), spreadsheetUrl });
     setClientId(next.clientId);
     setError("");
     setStatus({ status: "idle", message: "Pengaturan disimpan pada browser ini." });
+    return true;
   };
   const badge = status.status === "saved" ? "Tersimpan" : status.status === "syncing" || status.status === "working" ? "Sedang bekerja" : status.status === "connected" ? "Terhubung" : status.status === "error" ? "Perlu perhatian" : "Belum aktif";
   const badgeClass = status.status === "saved" ? "badge-green" : status.status === "error" ? "badge-red" : "badge-neutral";
@@ -264,8 +266,8 @@ function CloudSettings() {
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
           <button className="btn btn-sec" disabled={busy} onClick={saveSettings}><Icon name="check" size={14}/> Simpan Pengaturan</button>
-          <button className="btn btn-primary" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ saveSettings(); if (!S.readConfig().clientId) throw new Error("Simpan Client ID yang valid terlebih dahulu."); await S.connect(); })}> <Icon name="user" size={14}/> Hubungkan Google</button>
-          <button className="btn btn-sec" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ saveSettings(); if (!S.readConfig().clientId) throw new Error("Simpan Client ID yang valid terlebih dahulu."); if (!S.isConnected()) await S.authorize(); const created=await S.createSpreadsheet(); setSpreadsheetId(created.spreadsheetId); setSpreadsheetUrl(created.spreadsheetUrl || ""); })}><Icon name="plus" size={14}/> Buat Spreadsheet di Drive</button>
+          <button className="btn btn-primary" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); await S.connect(); })}> <Icon name="user" size={14}/> Hubungkan Google</button>
+          <button className="btn btn-sec" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); if (!S.isConnected()) await S.authorize(); const created=await S.createSpreadsheet(); setSpreadsheetId(created.spreadsheetId); setSpreadsheetUrl(created.spreadsheetUrl || ""); })}><Icon name="plus" size={14}/> Buat Spreadsheet di Drive</button>
         </div>
         {spreadsheetUrl && <p style={{fontSize:13,marginTop:12}}><a href={spreadsheetUrl} target="_blank" rel="noreferrer">Buka database STM di Google Sheets ↗</a></p>}
       </div>
@@ -273,8 +275,8 @@ function CloudSettings() {
         <h3 style={{marginTop:0}}>Sinkronisasi data</h3>
         <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Pilih sumber data awal dengan sengaja. “Muat dari Google Sheets” mengganti data browser ini dengan data cloud. “Upload data perangkat ini” mengganti isi spreadsheet dengan data browser ini. Setelah pilihan pertama berhasil, perubahan berikutnya otomatis disinkronkan saat tersambung.</p>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          <button className="btn btn-primary" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ saveSettings(); await S.loadAll(); })}><Icon name="download" size={14}/> Muat dari Google Sheets</button>
-          <button className="btn btn-sec" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ saveSettings(); await S.uploadLocal(); })}><Icon name="file_excel" size={14}/> Upload data perangkat ini</button>
+          <button className="btn btn-primary" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); await S.loadAll(); })}><Icon name="download" size={14}/> Muat dari Google Sheets</button>
+          <button className="btn btn-sec" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); await S.uploadLocal(); })}><Icon name="file_excel" size={14}/> Upload data perangkat ini</button>
         </div>
         {error && <div className="badge badge-red" style={{marginTop:12,whiteSpace:"normal"}}>{error}</div>}
         <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Catatan keamanan: akses memakai Google OAuth dan scope <code>drive.file</code> agar aplikasi hanya mendapat akses ke file Drive yang dibuat/dibuka lewat aplikasi ini. Access token tidak disimpan permanen di browser. Tetap ekspor CSV sebagai cadangan.</div>
