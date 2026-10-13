@@ -112,7 +112,7 @@ function Dashboard({ setRoute, currency }) {
           <div className="card-hd">
             <div>
               <h3>Perubahan Saldo 12 Bulan Terakhir</h3>
-              <div className="muted" style={{fontSize:12}}>Total setoran per bulan</div>
+              <div className="muted" style={{fontSize:12}}>Setoran dikurangi penarikan per bulan</div>
             </div>
             <div className="card-hd-actions">
               <span className="badge badge-accent"><span className="badge-dot"/> {fmtCompact(incomeBars.reduce((a,b)=>a+b,0))} total</span>
