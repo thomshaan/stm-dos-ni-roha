@@ -129,6 +129,8 @@ const { Icon } = window;
     const response = await gasRequest("replaceAll", { datasets: currentDatasets() });
     if (!response || !response.ok) throw new Error("Backend gagal menyimpan data.");
     writeConfig({ backendReady: true });
+    gasDirty = false;
+    startGasPolling();
     emit("saved", "Data perangkat berhasil diunggah. Sinkronisasi otomatis aktif.");
     return response;
   }
