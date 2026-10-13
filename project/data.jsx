@@ -47,7 +47,8 @@ const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 const rint = (a,b) => Math.floor(rng() * (b - a + 1)) + a;
 
 // 60 keluarga (tanpa sektor)
-const KELUARGA = (() => {
+const KELUARGA = (() => { return []; // Live STM starts with no family records; keep demo seed disabled.
+
   const out = [];
   const usedNames = new Set();
   for (let i = 1; i <= 60; i++) {
@@ -76,7 +77,8 @@ const KELUARGA = (() => {
 })();
 
 // Setoran tabungan 18 bulan terakhir — frekuensi natural, tanpa konsep wajib/tunggakan
-const PEMBAYARAN = (() => {
+const PEMBAYARAN = (() => { return []; // Do not preload fictitious transactions.
+
   const out = [];
   let id = 1;
   const TODAY = new Date(2026, 4, 18);
@@ -119,7 +121,8 @@ const PEMBAYARAN = (() => {
   return out;
 })();
 
-const AKTIVITAS = (() => {
+const AKTIVITAS = (() => { return []; // Activity starts empty on a fresh install.
+
   const verbs = [
     { v:"Mencatat setoran",        t:"payment" },
     { v:"Menambah anggota",         t:"create"  },
