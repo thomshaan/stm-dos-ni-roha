@@ -780,34 +780,27 @@ function RekapAkhir({ currency }) {
   const fmt = v => S.formatCurrency(v, currency);
   const families = S.KELUARGA.map(k => {
     const transactions = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(k.id_keluarga));
-    const tabungan = transactions.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
-    return { ...k, tabungan, transaksi: transactions.length };
-  }).sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
+    const saldoBersih = transactions.reduce((sum,p) => sum + (Number(p.nominal) || 0), 0);
+    return { ...k, saldoBersih, transaksi: transactions.length };
+  }).filter(k => k.saldoBersih !== 0)
+    .sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
   const filtered = families.filter(k => (String(k.kepala_keluarga) + " " + String(k.no_anggota)).toLowerCase().includes(query.trim().toLowerCase()));
-  const allDeposits = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
-  const withdrawalTransactions = S.PEMBAYARAN
-    .filter(p => Number(p.nominal) < 0)
-    .slice()
-    .sort((a,b) => String(a.tanggal_bayar).localeCompare(String(b.tanggal_bayar)) || Number(a.id_pembayaran)-Number(b.id_pembayaran));
-  const allWithdrawals = withdrawalTransactions.reduce((sum,p) => sum + Math.abs(Number(p.nominal) || 0), 0);
-  const netBalance = allDeposits - allWithdrawals;
+  const netBalance = S.PEMBAYARAN.reduce((sum,p) => sum + (Number(p.nominal) || 0), 0);
   const years = Array.from(new Set([...S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite), new Date().getFullYear()])).sort((a,b)=>a-b);
   const depositsByMonth = S.BULAN_ID.map((_,i) => S.PEMBAYARAN.filter(p=>Number(p.tahun)===Number(chartYear) && Number(p.bulan)===i+1 && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
   const exportAll = () => {
-    const rows = families.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.tabungan,k.transaksi]);
-    S.downloadCSVRows("Rekap-Akhir-Tabungan-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Total Tabungan Sepanjang Waktu","Jumlah Transaksi"],rows);
+    const rows = filtered.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.saldoBersih]);
+    S.downloadCSVRows("Rekap-Akhir-Tabungan-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Saldo Bersih"],rows);
   };
   return <div className="grid rekap-akhir-page" style={{gap:16}}>
     <div className="pdf-report-header"><h1>Rekap Tabungan Semua Keluarga</h1><div>Seluruh riwayat transaksi</div><small>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</small></div>
     <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
-    <div className="grid grid-3 rekap-akhir-summary">
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Setoran</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Penarikan</div><div className="stat-ico"><Icon name="minus" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">{withdrawalTransactions.length} transaksi penarikan</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih</div><div className="stat-ico"><Icon name="wallet" size={16}/></div></div><div className="stat-val" style={{color:netBalance<0?"var(--danger)":"var(--success)",fontSize:22}}>{fmt(netBalance)}</div><div className="stat-sub">Total setoran − total penarikan</div></div>
+    <div className="grid rekap-akhir-summary">
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih</div><div className="stat-ico"><Icon name="wallet" size={16}/></div></div><div className="stat-val" style={{color:netBalance<0?"var(--danger)":"var(--success)",fontSize:22}}>{fmt(netBalance)}</div><div className="stat-sub">Saldo setelah memperhitungkan seluruh transaksi</div></div>
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
-        <div><h3>Rekap Tabungan Semua Keluarga</h3><div className="muted">Total setoran per keluarga; saldo keseluruhan sudah dikurangi total penarikan anonim.</div></div>
+        <div><h3>Rekap Tabungan Semua Keluarga</h3><div className="muted">Menampilkan saldo bersih setiap keluarga setelah seluruh transaksi diperhitungkan.</div></div>
         <div className="card-hd-actions rekap-akhir-actions">
           <button className="btn btn-sec btn-sm" onClick={exportAll}><Icon name="file_excel" size={14}/> Ekspor CSV</button>
           <button className="btn btn-dark btn-sm no-print" onClick={()=>window.print()}><Icon name="file_pdf" size={14}/> Ekspor PDF</button>
@@ -817,28 +810,14 @@ function RekapAkhir({ currency }) {
         <div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari nama keluarga atau nomor anggota…"/></div>
         <span className="muted rekap-akhir-count">Menampilkan {filtered.length} dari {families.length} keluarga</span>
       </div>
-      <div className="tbl-wrap"><table className="tbl rekap-akhir-table rekap-akhir-savings-table"><thead><tr><th>Keluarga</th><th>Status</th><th className="tbl-num">Total Tabungan</th><th className="tbl-num">Transaksi Setoran</th></tr></thead><tbody>
-        {filtered.length===0 && <tr><td colSpan={4}><div className="empty-state">Tidak ada keluarga yang cocok dengan pencarian.</div></td></tr>}
+      <div className="tbl-wrap"><table className="tbl rekap-akhir-table rekap-akhir-savings-table"><thead><tr><th>Keluarga</th><th>Status</th><th className="tbl-num">Saldo Bersih</th></tr></thead><tbody>
+        {filtered.length===0 && <tr><td colSpan={3}><div className="empty-state">Tidak ada keluarga dengan saldo bersih selain Rp 0 yang cocok dengan pencarian.</div></td></tr>}
         {filtered.map(k=><tr key={k.id_keluarga}>
           <td><div className="rekap-family-name"><Avatar name={k.kepala_keluarga} size="sm"/><div><b>{k.kepala_keluarga}</b><small>{k.no_anggota}</small></div></div></td>
           <td><span className={k.status==="aktif"?"badge badge-green":"badge badge-neutral"}>{k.status==="aktif"?"Aktif":"Nonaktif"}</span></td>
-          <td className="tbl-num"><b style={{color:"var(--success)"}}>{fmt(k.tabungan)}</b></td>
-          <td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.id_keluarga)===Number(k.id_keluarga)&&Number(p.nominal)>0).length}</td>
+          <td className="tbl-num"><b style={{color:k.saldoBersih<0?"var(--danger)":"var(--success)"}}>{fmt(k.saldoBersih)}</b></td>
         </tr>)}
-      </tbody><tfoot><tr><td colSpan={2}>Saldo bersih (setoran − penarikan)</td><td className="tbl-num">{fmt(netBalance)}</td><td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length} setoran</td></tr></tfoot></table></div>
-    </div>
-    <div className="card rekap-akhir-withdrawals">
-      <div className="card-hd">
-        <div><h3>Riwayat Penarikan</h3><div className="muted">Nama keluarga tidak ditampilkan untuk menjaga privasi.</div></div>
-      </div>
-      <div className="tbl-wrap"><table className="tbl rekap-akhir-table">
-        <thead><tr><th>Tanggal</th><th>Jenis Transaksi</th><th className="tbl-num">Nominal Penarikan</th></tr></thead>
-        <tbody>
-          {withdrawalTransactions.length===0 && <tr><td colSpan={3}><div className="empty-state">Belum ada transaksi penarikan.</div></td></tr>}
-          {withdrawalTransactions.map((p,i)=><tr key={p.id_pembayaran}><td className="tab-num">{p.tanggal_bayar || "—"}</td><td>Penarikan</td><td className="tbl-num"><b style={{color:"var(--danger)"}}>{fmt(Math.abs(Number(p.nominal)))}</b></td></tr>)}
-        </tbody>
-        <tfoot><tr><td colSpan={2}>Total Penarikan</td><td className="tbl-num"><b>{fmt(allWithdrawals)}</b></td></tr></tfoot>
-      </table></div>
+      </tbody><tfoot><tr><td colSpan={2}>Total saldo bersih</td><td className="tbl-num"><b>{fmt(netBalance)}</b></td></tr></tfoot></table></div>
     </div>
     <div className="card rekap-akhir-chart-card">
       <div className="card-hd rekap-akhir-toolbar">
