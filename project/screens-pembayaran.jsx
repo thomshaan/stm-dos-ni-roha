@@ -18,7 +18,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     metode_pembayaran: "Tunai",
     keterangan: "",
   });
-  const [saved, setSaved] = React.useState(() => window.__sessionPayments || []);
+  const [saved, setSaved] = React.useState(() => [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p, _kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan", _jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"})));
 
   React.useEffect(() => {
     if (presetKeluarga) setForm(f => ({ ...f, id_keluarga: presetKeluarga.id_keluarga }));
@@ -200,8 +200,33 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                   <div style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>{s._kel_name}</div>
                   <div style={{fontSize:11.5,color:"var(--muted)"}}>{s._jenis_name} · {S.BULAN_ID[s.bulan-1]} {s.tahun} · {s.metode_pembayaran}</div>
                 </div>
-                <div className="tab-num" style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>
-                  +{fmt(s.nominal)}
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div className="tab-num" style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>+{fmt(s.nominal)}</div>
+                  <button type="button" className="btn btn-sec btn-sm" title="Edit transaksi" onClick={() => {
+                    const amountText = window.prompt("Nominal transaksi (angka)", String(s.nominal));
+                    if (amountText === null) return;
+                    const amount = Number(amountText);
+                    if (!Number.isFinite(amount) || amount < 1000) { toast({kind:"error",title:"Nominal tidak valid"}); return; }
+                    const date = window.prompt("Tanggal bayar (YYYY-MM-DD)", s.tanggal_bayar);
+                    if (date === null) return;
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(new Date(date+"T00:00:00").getTime())) { toast({kind:"error",title:"Tanggal tidak valid"}); return; }
+                    const note = window.prompt("Keterangan", s.keterangan || "");
+                    if (note === null) return;
+                    const target = S.PEMBAYARAN.find(p => p.id_pembayaran === s.id_pembayaran);
+                    if (!target) { toast({kind:"error",title:"Transaksi tidak ditemukan"}); return; }
+                    const before = target.nominal;
+                    target.nominal = amount;
+                    target.tanggal_bayar = date;
+                    target.bulan = Number(date.slice(5,7));
+                    target.tahun = Number(date.slice(0,4));
+                    target.keterangan = note.trim();
+                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Mengubah transaksi",detail:"ID "+s.id_pembayaran+" · "+S.formatCurrency(before)+" -> "+S.formatCurrency(amount),tipe:"update"});
+                    S.persistSTM();
+                    const next = [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p,_kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan",_jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"}));
+                    window.__sessionPayments = next;
+                    setSaved(next);
+                    toast({kind:"success",title:"Transaksi diperbarui",body:"Perubahan tersimpan di browser ini."});
+                  }}><Icon name="edit" size={12}/> Edit</button>
                 </div>
               </div>
             ))}
