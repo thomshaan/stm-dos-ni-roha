@@ -311,3 +311,16 @@ button{font-family:inherit}
   .report-title { break-after:avoid; }
   tr { break-inside:avoid; }
 }
+
+@media (max-width: 900px) {
+  .family-picker-grid { grid-template-columns:1fr !important; }
+  .family-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+@media (max-width: 560px) {
+  .family-summary-grid { grid-template-columns:1fr 1fr !important; }
+}
+@media print {
+  .card { break-inside:auto !important; }
+  .card-hd { break-after:avoid; }
+  .tbl thead { display:table-header-group; }
+}
