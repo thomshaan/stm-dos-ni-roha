@@ -324,3 +324,63 @@ button{font-family:inherit}
   .card-hd { break-after:avoid; }
   .tbl thead { display:table-header-group; }
 }
+
+
+/* Rekap Akhir + responsive shell improvements */
+.rekap-akhir-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rekap-akhir-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.rekap-chart-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;margin-bottom:10px}
+.rekap-akhir-toolbar{flex-wrap:wrap}
+.rekap-akhir-filter{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rekap-akhir-filter .input-wrap{width:min(440px,100%)}
+.rekap-akhir-count{font-size:12px;margin-left:auto}
+.rekap-akhir-table{min-width:760px}
+.rekap-family-name{display:flex;align-items:center;gap:10px;min-width:180px}
+.rekap-family-name b,.rekap-family-name small{display:block}
+.rekap-family-name b{color:var(--ink);font-size:13px}
+.rekap-family-name small{color:var(--muted);font-size:11px;margin-top:2px}
+@media (max-width: 900px) {
+  .rekap-akhir-charts{grid-template-columns:1fr}
+  .rekap-akhir-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width: 760px) {
+  .app{display:flex;flex-direction:column}
+  .sidebar{position:static;height:auto;min-height:0;flex-direction:row;align-items:center;gap:6px;padding:8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+  .sb-brand,.sb-section,.sb-foot{display:none !important}
+  .sb-item{flex:0 0 auto;padding:9px 11px;font-size:12px}
+  .sb-item[data-active="1"]::before{left:0;top:auto;right:0;bottom:0;width:auto;height:2px}
+  .main{width:100%;min-width:0}
+  .topbar{padding:10px 12px;gap:8px}
+  .tb-title{font-size:15px}
+  .tb-crumb{display:none}
+  .topbar .btn{white-space:nowrap;padding:7px 9px;font-size:11px}
+  .tb-icon-btn{flex:0 0 34px;width:34px;height:34px}
+  .content{padding:14px 12px 36px}
+  .card-hd{padding:14px;align-items:flex-start}
+  .card-pad{padding:14px}
+  .card-hd-actions{flex-wrap:wrap}
+  .grid-3,.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rekap-akhir-summary{grid-template-columns:1fr 1fr}
+  .rekap-akhir-summary .stat:last-child{grid-column:1 / -1}
+  .rekap-akhir-toolbar .card-hd-actions{margin-left:0}
+}
+@media (max-width: 480px) {
+  .topbar{flex-wrap:wrap}
+  .tb-spacer{display:none}
+  .topbar .btn{margin-left:auto}
+  .topbar .tb-icon-btn:last-child{display:none}
+  .content{padding:10px 8px 28px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .rekap-akhir-summary{grid-template-columns:1fr}
+  .rekap-akhir-summary .stat:last-child{grid-column:auto}
+  .stat{padding:14px}
+  .stat-val{overflow-wrap:anywhere}
+  .rekap-akhir-filter{align-items:stretch}
+  .rekap-akhir-filter .input-wrap{width:100%}
+  .rekap-akhir-count{margin-left:0}
+  .btn{max-width:100%}
+  .modal-backdrop{padding:8px}
+  .modal-bd{padding:14px}
+  .modal-hd,.modal-ft{padding:12px 14px}
+  .print-page{overflow-x:auto}
+}
