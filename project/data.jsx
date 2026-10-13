@@ -230,6 +230,108 @@ function pemasukanPerTahun() {
     .sort((a,b) => a.tahun - b.tahun);
 }
 
+// CSV backup helpers: one CSV file per collection, no server or external database required.
+const CSV_COLLECTIONS = {
+  families: { key: "KELUARGA", filename: "stm-keluarga.csv" },
+  transactions: { key: "PEMBAYARAN", filename: "stm-transaksi.csv" },
+  savings_types: { key: "JENIS_IURAN", filename: "stm-jenis-tabungan.csv" },
+  activity: { key: "AKTIVITAS", filename: "stm-aktivitas.csv" },
+};
+function csvEscape(value) {
+  const v = value == null ? "" : (typeof value === "object" ? JSON.stringify(value) : String(value));
+  return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+function exportCSV(collection) {
+  const config = CSV_COLLECTIONS[collection];
+  if (!config) throw new Error("Jenis data CSV tidak dikenal");
+  const rows = window.STM[config.key];
+  const columns = [...new Set(rows.flatMap(row => Object.keys(row)))];
+  const csv = [columns.map(csvEscape).join(","), ...rows.map(row => columns.map(k => csvEscape(row[k])).join(","))].join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = config.filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return rows.length;
+}
+function parseCSV(text) {
+  const rows = []; let row = []; let cell = ""; let quoted = false;
+  const input = String(text || "").replace(/^\uFEFF/, "");
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (quoted) {
+      if (ch === '"' && input[i+1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"' && cell === "") quoted = true;
+    else if (ch === ",") { row.push(cell); cell = ""; }
+    else if (ch === "\n") { row.push(cell.replace(/\r$/, "")); if (row.some(v => v !== "")) rows.push(row); row = []; cell = ""; }
+    else cell += ch;
+  }
+  if (quoted) throw new Error("CSV tidak valid: tanda kutip tidak berpasangan");
+  if (cell !== "" || row.length) { row.push(cell.replace(/\r$/, "")); if (row.some(v => v !== "")) rows.push(row); }
+  if (!rows.length) return [];
+  const headers = rows.shift().map(h => h.trim());
+  if (headers.some(h => !h) || new Set(headers).size !== headers.length) throw new Error("Header CSV kosong atau duplikat");
+  return rows.map(values => {
+    const record = {};
+    headers.forEach((h, i) => { record[h] = values[i] ?? ""; });
+    return record;
+  });
+}
+function importCSV(collection, text) {
+  const config = CSV_COLLECTIONS[collection];
+  if (!config) throw new Error("Jenis data CSV tidak dikenal");
+  const parsed = parseCSV(text);
+  if (!parsed.length) throw new Error("File CSV kosong");
+  const idFields = { families:"id_keluarga", transactions:"id_pembayaran", savings_types:"id_jenis", activity:"id" };
+  const idField = idFields[collection];
+  const required = {
+    families:["id_keluarga","no_anggota","kepala_keluarga","status"],
+    transactions:["id_pembayaran","id_keluarga","id_jenis","bulan","tahun","nominal","tanggal_bayar"],
+    savings_types:["id_jenis","nama_jenis","nominal_default"],
+    activity:["id","waktu","aksi","detail"],
+  }[collection];
+  if (required.some(field => !(field in parsed[0]))) throw new Error("Kolom CSV tidak sesuai untuk " + config.filename);
+  const numericFields = {
+    families:["id_keluarga"],
+    transactions:["id_pembayaran","id_keluarga","id_jenis","bulan","tahun","nominal"],
+    savings_types:["id_jenis","nominal_default"],
+    activity:["id"],
+  }[collection];
+  const records = parsed.map((raw, i) => {
+    const rec = { ...raw };
+    for (const field of numericFields) {
+      if (rec[field] === "" || !Number.isFinite(Number(rec[field]))) throw new Error("Nilai angka tidak valid pada baris " + (i+2) + " (" + field + ")");
+      rec[field] = Number(rec[field]);
+    }
+    if (collection === "families" && !["aktif","nonaktif"].includes(rec.status)) throw new Error("Status keluarga tidak valid pada baris " + (i+2));
+    if (collection === "transactions" && (rec.bulan < 1 || rec.bulan > 12 || rec.nominal < 1000)) throw new Error("Periode atau nominal transaksi tidak valid pada baris " + (i+2));
+    if (collection === "transactions" && !rec.metode_pembayaran) rec.metode_pembayaran = "Tunai";
+    if (collection === "families" && rec.no_hp === undefined) rec.no_hp = "";
+    return rec;
+  });
+  const ids = new Set();
+  for (const rec of records) {
+    if (ids.has(rec[idField])) throw new Error("ID duplikat dalam CSV: " + rec[idField]);
+    ids.add(rec[idField]);
+  }
+  if (collection === "transactions") {
+    const familyIds = new Set(window.STM.KELUARGA.map(k => Number(k.id_keluarga)));
+    const typeIds = new Set(window.STM.JENIS_IURAN.map(j => Number(j.id_jenis)));
+    for (const rec of records) {
+      if (!familyIds.has(rec.id_keluarga)) throw new Error("Keluarga ID " + rec.id_keluarga + " belum ada. Impor CSV keluarga dahulu.");
+      if (!typeIds.has(rec.id_jenis)) throw new Error("Jenis tabungan ID " + rec.id_jenis + " belum ada. Impor CSV jenis tabungan dahulu.");
+    }
+  }
+  const target = window.STM[config.key];
+  const byId = new Map(target.map(rec => [Number(rec[idField]), rec]));
+  for (const rec of records) byId.set(Number(rec[idField]), rec);
+  target.splice(0, target.length, ...Array.from(byId.values()));
+  persistSTM();
+  return records.length;
+}
+
 // Persistent browser storage for this prototype. For shared multi-user use, replace with a server database/API.
 const STORAGE_KEY = "stm-dos-ni-roha-v1";
 function persistSTM() {
@@ -259,6 +361,6 @@ Object.assign(window, {
     formatCurrency, formatCurrencyCompact,
     avatarColor, initials,
     pembayaranByKeluarga, totalKeluarga, pembayaranBulan,
-    pemasukanBulanan, pemasukanPerJenis, pemasukanPerTahun, persistSTM,
+    pemasukanBulanan, pemasukanPerJenis, pemasukanPerTahun, persistSTM, exportCSV, importCSV,
   }
 });
