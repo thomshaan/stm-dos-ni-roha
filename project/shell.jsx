@@ -88,9 +88,9 @@ function Sidebar({ route, setRoute }) {
         );
       })}
       <div className="sb-foot">
-        <div className="sb-avatar">RM</div>
+        <div className="sb-avatar">T</div>
         <div style={{minWidth:0,flex:1}}>
-          <div className="sb-user-name">Robert Marpaung</div>
+          <div className="sb-user-name">Thomas</div>
           <div className="sb-user-role">Administrator</div>
         </div>
       </div>

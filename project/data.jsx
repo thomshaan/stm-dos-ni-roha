@@ -26,7 +26,7 @@ const JENIS_IURAN = [
 ];
 
 const USERS = [
-  { id_user: 1, nama: "Robert Marpaung",   username: "robert.m",   role: "admin",     last_login: "2026-05-18 08:12" },
+  { id_user: 1, nama: "Thomas",          username: "thomas",     role: "admin",     last_login: "2026-05-18 08:12" },
   { id_user: 2, nama: "Tiurma Sitorus",    username: "tiurma.s",   role: "bendahara", last_login: "2026-05-18 07:40" },
   { id_user: 3, nama: "Pdt. Daud Hutapea", username: "daud.h",     role: "admin",     last_login: "2026-05-15 19:08" },
   { id_user: 4, nama: "Maruli Panggabean", username: "maruli.p",   role: "bendahara", last_login: "2026-05-12 11:24" },

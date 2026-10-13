@@ -6,7 +6,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
   const [statusFilter, setStatusFilter] = React.useState("Semua");
   const [sort, setSort] = React.useState({ field: "no_anggota", dir: "asc" });
   const [page, setPage] = React.useState(1);
-  const perPage = 10;
+  const [perPage, setPerPage] = React.useState(10);
   const [detail, setDetail] = React.useState(null);
   const [showAdd, setShowAdd] = React.useState(false);
   const [dataVersion, setDataVersion] = React.useState(0);
@@ -59,7 +59,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
               while (usedNumbers.has(noAnggota)) { seq++; noAnggota = "STM-" + String(seq).padStart(3,"0"); }
               const rec = { id_keluarga: nextId, no_anggota: noAnggota, kepala_keluarga: nama, no_hp: newFamily.no_hp.trim(), status: newFamily.status, tanggal_gabung: newFamily.tanggal_gabung };
               S.KELUARGA.push(rec);
-              S.AKTIVITAS.unshift({ id: Date.now(), waktu: new Date().toISOString().slice(0,16).replace("T"," "), user: "Robert Marpaung", aksi: "Menambah anggota", detail: nama, tipe: "create" });
+              S.AKTIVITAS.unshift({ id: Date.now(), waktu: new Date().toISOString().slice(0,16).replace("T"," "), user: "Thomas", aksi: "Menambah anggota", detail: nama, tipe: "create" });
               S.persistSTM();
               setNewFamily({ kepala_keluarga: "", no_hp: "", tanggal_gabung: new Date().toISOString().slice(0,10), status: "aktif" });
               setShowAdd(false);
@@ -82,6 +82,12 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
             <div className="muted" style={{fontSize:12}}>Klik baris untuk membuka detail & riwayat setoran</div>
           </div>
           <div className="card-hd-actions">
+            <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--muted)"}}>Tampilkan
+              <select aria-label="Jumlah keluarga per halaman" className="select" style={{width:82,padding:"7px 24px 7px 10px"}} value={perPage} onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}>
+                <option value={10}>10</option><option value={30}>30</option><option value={50}>50</option>
+              </select>
+            </label>
+            <span className="muted" style={{fontSize:12}}>{Math.min(filtered.length, perPage)} / {filtered.length}</span>
             <select className="select" style={{width:140,padding:"7px 32px 7px 12px"}}
                     value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option>Semua</option>
@@ -190,6 +196,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
 
 function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
   const S = window.STM;
+  const [historyLimit, setHistoryLimit] = React.useState(10);
   const fmt = (v) => S.formatCurrency(v, currency);
   if (!keluarga) return null;
   const pays = S.pembayaranByKeluarga(keluarga.id_keluarga)
@@ -252,8 +259,14 @@ function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
         <div>
           <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Setoran 12 Bulan Terakhir</div>
           <BarChart data={bars} labels={labels} height={160} formatY={(v) => S.formatCurrencyCompact(v, currency)}/>
-          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginTop:14,marginBottom:6}}>
-            Riwayat Setoran ({pays.length})
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:14,marginBottom:6}}>
+            <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600}}>Riwayat Setoran</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span className="muted" style={{fontSize:11}}>{Math.min(pays.length, historyLimit)} / {pays.length}</span>
+              <select aria-label="Jumlah riwayat setoran" className="select" style={{width:76,padding:"5px 22px 5px 8px",fontSize:12}} value={historyLimit} onChange={e => setHistoryLimit(Number(e.target.value))}>
+                <option value={10}>10</option><option value={30}>30</option><option value={50}>50</option>
+              </select>
+            </div>
           </div>
           <div style={{maxHeight:280,overflowY:"auto",border:"1px solid var(--line)",borderRadius:10}}>
             <table className="tbl tbl-noborder">
@@ -267,7 +280,7 @@ function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
                 </tr>
               </thead>
               <tbody>
-                {pays.slice(0, 30).map(p => {
+                {pays.slice(0, historyLimit).map(p => {
                   const j = S.JENIS_IURAN.find(x => x.id_jenis === p.id_jenis);
                   return (
                     <tr key={p.id_pembayaran}>

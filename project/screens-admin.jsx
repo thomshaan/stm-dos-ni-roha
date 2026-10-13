@@ -163,7 +163,7 @@ function UsersAdmin() {
                       if (!window.confirm(`Hapus user ${u.nama} (@${u.username})? Tindakan ini tidak dapat dibatalkan.`)) return;
                       const nextList = list.filter(x => x.id_user !== u.id_user);
                       S.USERS.splice(0, S.USERS.length, ...nextList);
-                      S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Menghapus user",detail:u.nama+" (@"+u.username+")",tipe:"warn"});
+                      S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Menghapus user",detail:u.nama+" (@"+u.username+")",tipe:"warn"});
                       S.persistSTM();
                       setList(nextList);
                       toast({kind:"success",title:"User dihapus",body:u.nama});
@@ -200,7 +200,7 @@ function UsersAdmin() {
                    toast({kind:"success",title:"User ditambahkan",body:nama});
                  }
                  S.USERS.splice(0, S.USERS.length, ...nextList);
-                 S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:edit.id_user ? "Memperbarui user" : "Menambah user",detail:nama+" (@"+username+")",tipe:edit.id_user ? "update" : "create"});
+                 S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:edit.id_user ? "Memperbarui user" : "Menambah user",detail:nama+" (@"+username+")",tipe:edit.id_user ? "update" : "create"});
                  S.persistSTM();
                  setList(nextList);
                  setEdit(null);
@@ -235,9 +235,10 @@ function UsersAdmin() {
 function Aktivitas() {
   const S = window.STM;
   const [filter, setFilter] = React.useState("Semua");
+  const [historyLimit, setHistoryLimit] = React.useState(10);
   const iconMap = { payment:"money", create:"plus", update:"edit", auth:"user", export:"download", warn:"alert" };
   const colorMap = { payment:"var(--success)", create:"var(--accent)", update:"var(--info)", auth:"var(--muted)", export:"var(--accent-2)", warn:"var(--danger)" };
-  const list = filter === "Semua" ? S.AKTIVITAS : S.AKTIVITAS.filter(a => a.tipe === filter);
+  const list = (filter === "Semua" ? S.AKTIVITAS : S.AKTIVITAS.filter(a => a.tipe === filter)).slice().sort((a,b) => b.waktu.localeCompare(a.waktu)).slice(0, historyLimit);
 
   const grouped = {};
   for (const a of list) {
@@ -251,9 +252,14 @@ function Aktivitas() {
       <div className="card-hd">
         <div>
           <h3>Riwayat Aktivitas Admin</h3>
-          <div className="muted" style={{fontSize:12}}>Log aksi pengurus pada sistem · {S.AKTIVITAS.length} entri</div>
+          <div className="muted" style={{fontSize:12}}>Log aksi pengurus pada sistem · {list.length} dari {filter === "Semua" ? S.AKTIVITAS.length : S.AKTIVITAS.filter(a => a.tipe === filter).length} entri</div>
         </div>
         <div className="card-hd-actions">
+          <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--muted)"}}>Tampilkan
+            <select aria-label="Jumlah aktivitas ditampilkan" className="select" style={{width:82,padding:"7px 24px 7px 10px"}} value={historyLimit} onChange={e => setHistoryLimit(Number(e.target.value))}>
+              <option value={10}>10</option><option value={30}>30</option><option value={50}>50</option>
+            </select>
+          </label>
           <div className="seg">
             {["Semua","payment","create","update","export","warn","auth"].map(t => (
               <button key={t} data-active={filter === t ? "1" : "0"} onClick={() => setFilter(t)}>
@@ -381,7 +387,7 @@ function PrintPreview({ currency }) {
             </div>
             <div className="print-meta">
               <div>Dicetak: 18 Mei 2026</div>
-              <div>Oleh: Robert Marpaung</div>
+              <div>Oleh: Thomas</div>
               <div>Periode: {S.BULAN_ID_FULL[bulan-1]} {tahun}</div>
             </div>
           </div>

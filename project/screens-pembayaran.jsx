@@ -48,7 +48,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       bulan: Number(form.bulan),
       tahun: Number(form.tahun),
       nominal: Number(form.nominal),
-      dicatat_oleh: "Robert Marpaung",
+      dicatat_oleh: "Thomas",
       _kel_name: k?.kepala_keluarga,
       _jenis_name: j?.nama_jenis,
     };
@@ -82,7 +82,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
         <div className="card-hd">
           <div>
             <h3>Catat Setoran Baru</h3>
-            <div className="muted" style={{fontSize:12}}>Form dicatat atas nama: <b style={{color:"var(--ink-2)"}}>Robert Marpaung (admin)</b></div>
+            <div className="muted" style={{fontSize:12}}>Form dicatat atas nama: <b style={{color:"var(--ink-2)"}}>Thomas (admin)</b></div>
           </div>
         </div>
         <form className="card-pad" onSubmit={submit} style={{display:"grid",gap:14}}>
@@ -227,7 +227,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                     target.bulan = Number(date.slice(5,7));
                     target.tahun = Number(date.slice(0,4));
                     target.keterangan = note.trim();
-                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Mengubah transaksi",detail:"ID "+s.id_pembayaran+" · "+S.formatCurrency(before)+" -> "+S.formatCurrency(amount),tipe:"update"});
+                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Mengubah transaksi",detail:"ID "+s.id_pembayaran+" · "+S.formatCurrency(before)+" -> "+S.formatCurrency(amount),tipe:"update"});
                     S.persistSTM();
                     const next = [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p,_kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan",_jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"}));
                     window.__sessionPayments = next;
@@ -239,7 +239,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                     const index = S.PEMBAYARAN.findIndex(x => x.id_pembayaran === s.id_pembayaran);
                     if (index < 0) { toast({kind:"error",title:"Transaksi tidak ditemukan"}); return; }
                     const [removed] = S.PEMBAYARAN.splice(index, 1);
-                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Menghapus transaksi",detail:"ID "+removed.id_pembayaran+" · "+S.formatCurrency(removed.nominal),tipe:"warn"});
+                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Menghapus transaksi",detail:"ID "+removed.id_pembayaran+" · "+S.formatCurrency(removed.nominal),tipe:"warn"});
                     S.persistSTM();
                     const next = [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(item => ({...item,_kel_name:S.KELUARGA.find(k => k.id_keluarga === item.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan",_jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === item.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"}));
                     window.__sessionPayments = next;
