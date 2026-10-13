@@ -3,6 +3,9 @@ const { Icon } = window;
 (() => {
   const CONFIG_KEY = "stm-google-sheets-config-v1";
   const READY_KEY = "stm-google-sheets-ready-v1";
+  // Shared family backend defaults. These values are public in GitHub Pages source by design.
+  const FAMILY_SYNC_URL = "https://script.google.com/macros/s/AKfycbytd-Gxh676uoODIBCDJfDtpWpk1JcaRfPzfIBJLfkRs6RniYcGRRV8Os8yCPnnE-tbKw/exec";
+  const FAMILY_SYNC_PIN = "1BAGHW37G7XTI";
   const TAB_COLUMNS = {
     KELUARGA: ["id_keluarga","no_anggota","kepala_keluarga","no_hp","status","tanggal_gabung"],
     JENIS_IURAN: ["id_jenis","nama_jenis","nominal_default","tipe"],
@@ -154,8 +157,11 @@ const { Icon } = window;
   }
 
   function readConfig() {
-    try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}"); }
-    catch (_) { return {}; }
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}"); }
+    catch (_) { saved = {}; }
+    // Keep the family sync preconfigured on every phone, even if an older local config exists.
+    return { ...saved, gasUrl: FAMILY_SYNC_URL, gasPin: FAMILY_SYNC_PIN, backendReady: true };
   }
   function writeConfig(next) {
     const current = readConfig();
@@ -439,15 +445,15 @@ function CloudSettings() {
       </div>
       <div className="card card-pad">
         <h3 style={{marginTop:0}}>Automatic family sync (tanpa Google login di setiap HP)</h3>
-        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Gunakan backend Google Apps Script agar keluarga dapat membaca dan menyimpan data ke spreadsheet bersama tanpa memasukkan OAuth Client ID atau login Google pada tiap perangkat. Siapkan deployment Apps Script terlebih dahulu sesuai panduan setup.</p>
+        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Backend Google Apps Script keluarga sudah dikonfigurasi otomatis. Tidak perlu memasukkan URL, kode akses, OAuth Client ID, atau login Google pada tiap perangkat. Data cloud akan dimuat otomatis saat aplikasi dibuka.</p>
         <div className="grid grid-2" style={{gap:12}}>
-          <div className="field"><label>Apps Script Web App URL (/exec)</label><input className="input" value={gasUrl} onChange={e=>setGasUrl(e.target.value)} placeholder="https://script.google.com/macros/s/.../exec" autoComplete="url"/><div className="hint">Gunakan URL deployment dari Apps Script, bukan URL editor.</div></div>
-          <div className="field"><label>Kode akses keluarga</label><input className="input" type="password" value={gasPin} onChange={e=>setGasPin(e.target.value)} placeholder="Masukkan passphrase keluarga" autoComplete="current-password"/><div className="hint">Disimpan pada browser perangkat ini agar sinkronisasi otomatis. Jangan gunakan PIN pendek.</div></div>
+          <div className="field"><label>Apps Script Web App URL (/exec)</label><input className="input" value={gasUrl} readOnly/><div className="hint">Dikonfigurasi otomatis untuk semua perangkat.</div></div>
+          <div className="field"><label>Kode akses keluarga</label><input className="input" type="password" value={gasPin} readOnly/><div className="hint">Dikonfigurasi otomatis di aplikasi.</div></div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
-          <button className="btn btn-sec" disabled={busy} onClick={()=>run(async()=>{ if(!gasUrl.trim() || gasPin.length < 12) throw new Error("Masukkan URL Apps Script dan passphrase minimal 12 karakter (disarankan 20+)."); const u=new URL(gasUrl.trim()); if(u.protocol!=="https:" || u.hostname!=="script.google.com" || !u.pathname.includes("/macros/s/") || !u.pathname.endsWith("/exec")) throw new Error("URL harus berupa URL deployment Apps Script yang berakhir dengan /exec."); S.writeConfig({gasUrl:u.href,gasPin}); setGasUrl(u.href); await S.gasTest(); })}><Icon name="check" size={14}/> Test connection</button>
-          <button className="btn btn-primary" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ S.writeConfig({gasUrl:gasUrl.trim(),gasPin}); await S.gasLoadAll(); })}><Icon name="download" size={14}/> Load cloud data</button>
-          <button className="btn btn-sec" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ if(!window.confirm("Upload akan mengganti seluruh data pada lima tab Google Sheets dengan data perangkat ini. Pastikan perangkat ini berisi data yang benar dan sudah ada backup. Lanjutkan?")) return; S.writeConfig({gasUrl:gasUrl.trim(),gasPin}); await S.gasUploadLocal(); })}><Icon name="file_excel" size={14}/> Upload this device</button>
+          <button className="btn btn-sec" disabled={busy} onClick={()=>run(async()=>{ const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasTest(); })}><Icon name="check" size={14}/> Test connection</button>
+          <button className="btn btn-primary" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasLoadAll(); })}><Icon name="download" size={14}/> Load cloud data</button>
+          <button className="btn btn-sec" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ if(!window.confirm("Upload akan mengganti seluruh data pada lima tab Google Sheets dengan data perangkat ini. Pastikan perangkat ini berisi data yang benar dan sudah ada backup. Lanjutkan?")) return; const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasUploadLocal(); })}><Icon name="file_excel" size={14}/> Upload this device</button>
         </div>
         <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Peringatan: siapa pun yang memiliki URL deployment dan passphrase dapat membaca/mengubah data. Bagikan passphrase hanya kepada keluarga yang dipercaya. Sinkronisasi otomatis memakai strategi last-write-wins; hindari mengedit dari dua perangkat pada saat yang sama. Ekspor CSV sebagai backup.</div>
         <p style={{fontSize:13,marginTop:10}}><a href="https://github.com/thomshaan/stm-dos-ni-roha/blob/main/APPS-SCRIPT-FAMILY-SYNC.md" target="_blank" rel="noreferrer">Buka panduan setup Apps Script ↗</a></p>
