@@ -434,6 +434,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
 function RekapBulanan({ currency }) {
   const S = window.STM;
   const [bulan, setBulan] = React.useState(new Date().getMonth()+1);
+  const [tahun, setTahun] = React.useState(new Date().getFullYear());
   const fmt = (v) => S.formatCurrency(v, currency);
   const fmtC = (v) => S.formatCurrencyCompact(v, currency);
 
