@@ -1,4 +1,5 @@
 // Google Sheets sync for STM DOS Ni Roha.
+const { Icon } = window;
 // The OAuth client ID and spreadsheet ID are public configuration, NOT secrets.
 // Access is enforced by Google's OAuth token and the spreadsheet's own sharing permissions.
 const STM_GOOGLE_CONFIG = {
