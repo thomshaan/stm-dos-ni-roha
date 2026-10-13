@@ -153,8 +153,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
           <div className="grid grid-4">
             <div className="field"><label>Jenis Transaksi</label><select className="select" value={bulkDirection} onChange={e=>setBulkDirection(e.target.value)}><option value="setoran">Setoran (uang masuk)</option><option value="penarikan">Penarikan (ambil uang kembali)</option></select></div>
             <div className="field"><label>Jenis Tabungan</label><select className="select" value={bulkType} onChange={e => {const id=Number(e.target.value);const def=Number(S.JENIS_IURAN.find(j=>j.id_jenis===id)?.nominal_default||0);setBulkType(id);setBulkAmounts(prev=>Object.fromEntries(Object.entries(prev).map(([k,v])=>[k,v===Number(S.JENIS_IURAN.find(j=>j.id_jenis===Number(bulkType))?.nominal_default||0)?def:v])));}}>{S.JENIS_IURAN.map(j=><option key={j.id_jenis} value={j.id_jenis}>{j.nama_jenis}</option>)}</select></div>
-            <div className="field"><label>{form.jenis_transaksi === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label><input className="input" type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)} required /></div>
-            <div className="field"><label>{form.jenis_transaksi === "penarikan" ? "Metode Penarikan" : "Metode Setor"}</label><select className="select" value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}>{S.METODE.map(m=><option key={m} value={m}>{m}</option>)}</select></div>
+            <div className="field"><label>{bulkDirection === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label><input className="input" type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)} required /></div>
+            <div className="field"><label>{bulkDirection === "penarikan" ? "Metode Penarikan" : "Metode Setor"}</label><select className="select" value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}>{S.METODE.map(m=><option key={m} value={m}>{m}</option>)}</select></div>
           </div>
           <div className="grid grid-3">
             <div className="field"><label>Bulan Periode</label><select className="select" value={bulkMonth} onChange={e=>setBulkMonth(Number(e.target.value))}>{S.BULAN_ID_FULL.map((b,i)=><option key={i} value={i+1}>{b}</option>)}</select></div>
@@ -251,7 +251,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
               </select>
             </div>
             <div className="field">
-              <label>Tanggal Setor</label>
+              <label>{form.jenis_transaksi === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label>
               <input className="input" type="date" value={form.tanggal_bayar}
                      onChange={e => setForm(f => ({...f, tanggal_bayar: e.target.value}))}/>
             </div>
@@ -259,7 +259,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
 
           <div className="grid grid-2">
             <div className="field">
-              <label>Metode Setor</label>
+              <label>{form.jenis_transaksi === "penarikan" ? "Metode Penarikan" : "Metode Setor"}</label>
               <div className="seg" style={{width:"100%"}}>
                 {S.METODE.map(m => (
                   <button key={m} type="button" style={{flex:1}}
@@ -280,7 +280,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
 
           <div className="flex gap-12" style={{justifyContent:"flex-end",marginTop:6}}>
             <button type="button" className="btn btn-ghost" onClick={() => setForm({
-              id_keluarga: "", id_jenis: 1, bulan: currentMonth, tahun: currentYear, nominal: 25000,
+              id_keluarga: "", id_jenis: 1, jenis_transaksi: "setoran", bulan: currentMonth, tahun: currentYear, nominal: 25000,
               tanggal_bayar: today, metode_pembayaran: "Tunai", keterangan: "",
             })}>Reset</button>
             <button type="submit" className="btn btn-primary">
