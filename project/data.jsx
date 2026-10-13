@@ -360,6 +360,8 @@ function persistSTM() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS }));
     // Let the active screen refresh its derived totals/lists immediately after any saved change.
     window.dispatchEvent(new Event("stm:data-updated"));
+    // Keep Google Sheets in sync after the user explicitly connects their account.
+    if (window.STM_CLOUD && typeof window.STM_CLOUD.queueSave === "function") window.STM_CLOUD.queueSave();
   } catch (err) { console.error("Gagal menyimpan data STM", err); }
 }
 function restoreSTM() {
