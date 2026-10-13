@@ -353,6 +353,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
           </div>
         )}
       </div>
+      </div>}
     </div>
   );
 }
