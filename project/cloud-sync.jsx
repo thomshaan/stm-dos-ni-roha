@@ -19,6 +19,9 @@ const { Icon } = window;
   let gasFrameReady = null;
   let gasSaving = false;
   let gasQueued = false;
+  let gasDirty = false;
+  let applyingGasData = false;
+  let gasPollTimer = null;
   const gasPending = new Map();
 
   function gasConfig() {
@@ -83,20 +86,43 @@ const { Icon } = window;
     emit("connected", "Apps Script terhubung. Kode akses keluarga diterima.");
     return result;
   }
+  function applyGasDatasets(datasets) {
+    const S = window.STM;
+    for (const key of Object.keys(TAB_COLUMNS)) {
+      const rows = datasets[key];
+      if (!Array.isArray(rows)) throw new Error("Data tab tidak valid: " + key);
+      S[key].splice(0, S[key].length, ...rows);
+    }
+    applyingGasData = true;
+    try { S.persistSTM({ skipCloud: true }); }
+    finally { applyingGasData = false; }
+  }
   async function gasLoadAll() {
     emit("working", "Memuat data keluarga dari Google Sheets…");
     const response = await gasRequest("getAll");
     if (!response || !response.ok || !response.datasets) throw new Error("Backend tidak mengembalikan data yang valid.");
-    const S = window.STM;
-    for (const key of Object.keys(TAB_COLUMNS)) {
-      const rows = response.datasets[key];
-      if (!Array.isArray(rows)) throw new Error("Data tab tidak valid: " + key);
-      S[key].splice(0, S[key].length, ...rows);
-    }
+    applyGasDatasets(response.datasets);
     writeConfig({ backendReady: true });
-    S.persistSTM({ skipCloud: true });
+    gasDirty = false;
+    startGasPolling();
     emit("saved", "Data terbaru berhasil dimuat. Sinkronisasi otomatis aktif pada perangkat ini.");
     return response.datasets;
+  }
+  async function gasPoll() {
+    const config = readConfig();
+    if (!config.backendReady || !config.gasUrl || !config.gasPin || gasSaving || gasDirty || document.visibilityState !== "visible") return;
+    try {
+      const response = await gasRequest("getAll");
+      if (response && response.ok && response.datasets && !gasSaving && !gasDirty) {
+        applyGasDatasets(response.datasets);
+      }
+    } catch (error) {
+      emit("error", "Pembaruan cloud otomatis gagal: " + error.message);
+    }
+  }
+  function startGasPolling() {
+    if (gasPollTimer) clearInterval(gasPollTimer);
+    gasPollTimer = setInterval(gasPoll, 30000);
   }
   async function gasUploadLocal() {
     emit("working", "Mengunggah data perangkat ke Google Sheets…");
@@ -113,6 +139,7 @@ const { Icon } = window;
     gasSaving = true;
     emit("syncing", "Menyinkronkan perubahan ke Google Sheets…");
     try {
+      gasDirty = false;
       await gasRequest("replaceAll", { datasets: currentDatasets() });
       emit("saved", "Perubahan tersimpan di Google Sheets.");
     } catch (error) {
@@ -301,8 +328,11 @@ const { Icon } = window;
     catch (error) { setReady(false); throw error; }
   }
   function scheduleSave() {
+    if (applyingGasData) return;
     const config = readConfig();
     if (config.gasUrl && config.gasPin && config.backendReady) {
+      gasDirty = true;
+      if (gasSaving) gasQueued = true;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => gasSaveAll().catch(() => {}), 900);
       return;
@@ -322,6 +352,12 @@ const { Icon } = window;
   }
   window.STMCloudSync = { readConfig, writeConfig, authorize, connect, createSpreadsheet, loadAll, uploadLocal, scheduleSave, isConnected: () => !!accessToken, isReady, gasTest, gasLoadAll, gasUploadLocal };
   window.addEventListener("stm:data-updated", scheduleSave);
+  setTimeout(() => {
+    const config = readConfig();
+    if (config.gasUrl && config.gasPin && config.backendReady) {
+      gasLoadAll().catch(error => emit("error", "Gagal memuat data cloud otomatis: " + error.message));
+    }
+  }, 1200);
 })();
 function CloudSettings() {
   const S = window.STMCloudSync;
