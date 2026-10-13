@@ -709,4 +709,68 @@ function RekapKeluarga({ currency }) {
   </div>;
 }
 
-Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan, RekapKeluarga });
+
+
+function RekapAkhir({ currency }) {
+  const S = window.STM;
+  const [query, setQuery] = React.useState("");
+  const fmt = v => S.formatCurrency(v, currency);
+  const families = S.KELUARGA.map(k => {
+    const transactions = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(k.id_keluarga));
+    const tabungan = transactions.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
+    const pengeluaran = transactions.reduce((sum,p) => sum + Math.max(0, -(Number(p.nominal) || 0)), 0);
+    return { ...k, tabungan, pengeluaran, saldo: tabungan - pengeluaran, transaksi: transactions.length };
+  }).sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
+  const filtered = families.filter(k => (String(k.kepala_keluarga) + " " + String(k.no_anggota)).toLowerCase().includes(query.trim().toLowerCase()));
+  const allDeposits = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
+  const allWithdrawals = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, -(Number(p.nominal) || 0)), 0);
+  const years = Array.from(new Set(S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite))).sort((a,b)=>a-b);
+  const chartYears = years.length ? years : [new Date().getFullYear()];
+  const depositsByYear = chartYears.map(y => S.PEMBAYARAN.filter(p=>Number(p.tahun)===y && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
+  const withdrawalsByYear = chartYears.map(y => S.PEMBAYARAN.filter(p=>Number(p.tahun)===y && Number(p.nominal)<0).reduce((sum,p)=>sum+Math.abs(Number(p.nominal)),0));
+  const exportAll = () => {
+    const rows = families.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.tabungan,k.pengeluaran,k.saldo,k.transaksi]);
+    S.downloadCSVRows("Rekap-Akhir-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Total Tabungan Sepanjang Waktu","Total Pengeluaran/Penarikan Sepanjang Waktu","Saldo Bersih Saat Ini","Jumlah Transaksi"],rows);
+  };
+  return <div className="grid rekap-akhir-page" style={{gap:16}}>
+    <div className="grid grid-3 rekap-akhir-summary">
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Tabungan Sepanjang Waktu</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Pengeluaran</div><div className="stat-ico red"><Icon name="receipt" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">Akumulasi seluruh penarikan</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih Tercatat</div><div className="stat-ico"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{fontSize:22,color:allDeposits-allWithdrawals<0?"var(--danger)":"var(--ink)"}}>{fmt(allDeposits-allWithdrawals)}</div><div className="stat-sub">{families.length} keluarga · {S.PEMBAYARAN.length} transaksi</div></div>
+    </div>
+    <div className="card">
+      <div className="card-hd rekap-akhir-toolbar">
+        <div><h3>Grafik Akumulasi Tahunan</h3><div className="muted">Setoran dan penarikan dari seluruh transaksi yang tercatat, semua tahun.</div></div>
+      </div>
+      <div className="card-pad rekap-akhir-charts">
+        <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--success)"}}/> Total tabungan per tahun</div><BarChart data={depositsByYear} labels={chartYears.map(String)} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--success)" softAccent="var(--success-soft)"/></section>
+        <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--danger)"}}/> Total pengeluaran per tahun</div><BarChart data={withdrawalsByYear} labels={chartYears.map(String)} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--danger)" softAccent="var(--danger-soft)"/></section>
+      </div>
+    </div>
+    <div className="card">
+      <div className="card-hd rekap-akhir-toolbar">
+        <div><h3>Rekap Semua Keluarga</h3><div className="muted">Total setoran, penarikan, dan saldo bersih sepanjang riwayat yang tersimpan.</div></div>
+        <div className="card-hd-actions rekap-akhir-actions">
+          <button className="btn btn-sec btn-sm" onClick={exportAll}><Icon name="file_excel" size={14}/> Ekspor CSV</button>
+        </div>
+      </div>
+      <div className="card-pad rekap-akhir-filter">
+        <div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari nama keluarga atau nomor anggota…"/></div>
+        <span className="muted rekap-akhir-count">Menampilkan {filtered.length} dari {families.length} keluarga</span>
+      </div>
+      <div className="tbl-wrap"><table className="tbl rekap-akhir-table"><thead><tr><th>Keluarga</th><th>Status</th><th className="tbl-num">Total Tabungan</th><th className="tbl-num">Total Pengeluaran</th><th className="tbl-num">Saldo Bersih</th><th className="tbl-num">Transaksi</th></tr></thead><tbody>
+        {filtered.length===0 && <tr><td colSpan={6}><div className="empty-state">Tidak ada keluarga yang cocok dengan pencarian.</div></td></tr>}
+        {filtered.map(k=><tr key={k.id_keluarga}>
+          <td><div className="rekap-family-name"><Avatar name={k.kepala_keluarga} size="sm"/><div><b>{k.kepala_keluarga}</b><small>{k.no_anggota}</small></div></div></td>
+          <td><span className={k.status==="aktif"?"badge badge-green":"badge badge-neutral"}>{k.status==="aktif"?"Aktif":"Nonaktif"}</span></td>
+          <td className="tbl-num"><b style={{color:"var(--success)"}}>{fmt(k.tabungan)}</b></td>
+          <td className="tbl-num"><b style={{color:"var(--danger)"}}>{fmt(k.pengeluaran)}</b></td>
+          <td className="tbl-num"><b style={{color:k.saldo<0?"var(--danger)":"var(--ink)"}}>{fmt(k.saldo)}</b></td>
+          <td className="tbl-num">{k.transaksi}</td>
+        </tr>)}
+      </tbody><tfoot><tr><td colSpan={2}>Total seluruh keluarga</td><td className="tbl-num">{fmt(allDeposits)}</td><td className="tbl-num">{fmt(allWithdrawals)}</td><td className="tbl-num">{fmt(allDeposits-allWithdrawals)}</td><td className="tbl-num">{S.PEMBAYARAN.length}</td></tr></tfoot></table></div>
+    </div>
+  </div>;
+}
+
+Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan, RekapKeluarga, RekapAkhir });
