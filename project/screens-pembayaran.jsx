@@ -19,6 +19,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
     metode_pembayaran: "Tunai",
     keterangan: "",
   });
+  const [familySearch, setFamilySearch] = React.useState(presetKeluarga?.kepala_keluarga || "");
+  const [familyDropdownOpen, setFamilyDropdownOpen] = React.useState(false);
   const [historyLimit, setHistoryLimit] = React.useState(10);
   const [entryMode, setEntryMode] = React.useState("single");
   const [bulkFamilies, setBulkFamilies] = React.useState([]);
@@ -40,7 +42,10 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
   }, [initialDirection]);
 
   React.useEffect(() => {
-    if (presetKeluarga) setForm(f => ({ ...f, id_keluarga: presetKeluarga.id_keluarga }));
+    if (presetKeluarga) {
+      setForm(f => ({ ...f, id_keluarga: presetKeluarga.id_keluarga }));
+      setFamilySearch(presetKeluarga.kepala_keluarga || "");
+    }
   }, [presetKeluarga]);
 
   const onJenisChange = (id) => {
@@ -95,6 +100,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
       body:`${k?.kepala_keluarga} — ${j?.nama_jenis} ${S.BULAN_ID_FULL[rec.bulan-1]} ${rec.tahun} · ${S.formatCurrency(Math.abs(rec.nominal), currency)}`,
     });
     setForm(f => ({ ...f, jenis_transaksi: initialDirection, nominal: S.JENIS_IURAN.find(x => x.id_jenis === f.id_jenis)?.nominal_default || 25000, keterangan: "", id_keluarga: "" }));
+    setFamilySearch("");
+    setFamilyDropdownOpen(false);
     onSaved && onSaved(rec);
   };
 
@@ -212,17 +219,42 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
           </div>
         </div>
         <form className="card-pad" onSubmit={submit} style={{display:"grid",gap:14}}>
-          <div className="field">
+          <div className="field family-autocomplete">
             <label>Anggota</label>
-            <select className="select" value={form.id_keluarga}
-                    onChange={e => setForm(f => ({...f, id_keluarga: e.target.value}))}>
-              <option value="">— Pilih anggota —</option>
-              {S.KELUARGA.filter(k => k.status === "aktif").map(k => (
-                <option key={k.id_keluarga} value={k.id_keluarga}>
-                  {k.no_anggota} · {k.kepala_keluarga}
-                </option>
-              ))}
-            </select>
+            <div style={{position:"relative"}}>
+              <input
+                className="input"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={familyDropdownOpen}
+                value={familySearch}
+                onFocus={() => setFamilyDropdownOpen(true)}
+                onChange={e => {
+                  setFamilySearch(e.target.value);
+                  setForm(f => ({...f, id_keluarga:""}));
+                  setFamilyDropdownOpen(true);
+                }}
+                placeholder="Ketik nama keluarga atau nomor anggota…"
+                autoComplete="off"
+              />
+              {familyDropdownOpen && <div className="family-suggestions" role="listbox">
+                {activeFamilies.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(familySearch.trim().toLowerCase())).slice(0,8).map(k => (
+                  <button type="button" role="option" aria-selected={String(form.id_keluarga)===String(k.id_keluarga)} key={k.id_keluarga}
+                    className={"family-suggestion"+(String(form.id_keluarga)===String(k.id_keluarga)?" is-selected":"")}
+                    onMouseDown={e=>e.preventDefault()}
+                    onClick={() => {
+                      setForm(f => ({...f, id_keluarga:String(k.id_keluarga)}));
+                      setFamilySearch(k.kepala_keluarga);
+                      setFamilyDropdownOpen(false);
+                    }}>
+                    <span><b>{k.kepala_keluarga}</b><small>{k.no_anggota}</small></span>
+                    {String(form.id_keluarga)===String(k.id_keluarga) && <Icon name="check" size={15}/>}
+                  </button>
+                ))}
+                {activeFamilies.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(familySearch.trim().toLowerCase())).length===0 && <div className="family-suggestion-empty">Tidak ada keluarga yang cocok.</div>}
+              </div>}
+            </div>
+            <div className="hint">{form.id_keluarga ? "Terpilih: "+(S.KELUARGA.find(k=>String(k.id_keluarga)===String(form.id_keluarga))?.kepala_keluarga || "") : "Ketik nama, lalu pilih keluarga dari hasil pencarian."}</div>
           </div>
 
           <div className="grid grid-3">
@@ -718,38 +750,33 @@ function RekapAkhir({ currency }) {
   const families = S.KELUARGA.map(k => {
     const transactions = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(k.id_keluarga));
     const tabungan = transactions.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
-    const pengeluaran = transactions.reduce((sum,p) => sum + Math.max(0, -(Number(p.nominal) || 0)), 0);
-    return { ...k, tabungan, pengeluaran, saldo: tabungan - pengeluaran, transaksi: transactions.length };
+    return { ...k, tabungan, transaksi: transactions.length };
   }).sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
   const filtered = families.filter(k => (String(k.kepala_keluarga) + " " + String(k.no_anggota)).toLowerCase().includes(query.trim().toLowerCase()));
   const allDeposits = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
-  const allWithdrawals = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, -(Number(p.nominal) || 0)), 0);
   const years = Array.from(new Set(S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite))).sort((a,b)=>a-b);
   const chartYears = years.length ? years : [new Date().getFullYear()];
   const depositsByYear = chartYears.map(y => S.PEMBAYARAN.filter(p=>Number(p.tahun)===y && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
-  const withdrawalsByYear = chartYears.map(y => S.PEMBAYARAN.filter(p=>Number(p.tahun)===y && Number(p.nominal)<0).reduce((sum,p)=>sum+Math.abs(Number(p.nominal)),0));
   const exportAll = () => {
-    const rows = families.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.tabungan,k.pengeluaran,k.saldo,k.transaksi]);
-    S.downloadCSVRows("Rekap-Akhir-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Total Tabungan Sepanjang Waktu","Total Pengeluaran/Penarikan Sepanjang Waktu","Saldo Bersih Saat Ini","Jumlah Transaksi"],rows);
+    const rows = families.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.tabungan,k.transaksi]);
+    S.downloadCSVRows("Rekap-Akhir-Tabungan-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Total Tabungan Sepanjang Waktu","Jumlah Transaksi"],rows);
   };
   return <div className="grid rekap-akhir-page" style={{gap:16}}>
-    <div className="grid grid-3 rekap-akhir-summary">
+    <div className="grid grid-2 rekap-akhir-summary">
       <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Tabungan Sepanjang Waktu</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Pengeluaran</div><div className="stat-ico red"><Icon name="receipt" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">Akumulasi seluruh penarikan</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih Tercatat</div><div className="stat-ico"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{fontSize:22,color:allDeposits-allWithdrawals<0?"var(--danger)":"var(--ink)"}}>{fmt(allDeposits-allWithdrawals)}</div><div className="stat-sub">{families.length} keluarga · {S.PEMBAYARAN.length} transaksi</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Keluarga & Transaksi</div><div className="stat-ico"><Icon name="users" size={16}/></div></div><div className="stat-val" style={{fontSize:22}}>{families.length}</div><div className="stat-sub">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length} transaksi setoran tercatat</div></div>
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
-        <div><h3>Grafik Akumulasi Tahunan</h3><div className="muted">Setoran dan penarikan dari seluruh transaksi yang tercatat, semua tahun.</div></div>
+        <div><h3>Grafik Tabungan Tahunan</h3><div className="muted">Akumulasi setoran dari seluruh transaksi yang tercatat, semua tahun.</div></div>
       </div>
-      <div className="card-pad rekap-akhir-charts">
+      <div className="card-pad rekap-akhir-charts rekap-akhir-savings-only">
         <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--success)"}}/> Total tabungan per tahun</div><BarChart data={depositsByYear} labels={chartYears.map(String)} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--success)" softAccent="var(--success-soft)"/></section>
-        <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--danger)"}}/> Total pengeluaran per tahun</div><BarChart data={withdrawalsByYear} labels={chartYears.map(String)} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--danger)" softAccent="var(--danger-soft)"/></section>
       </div>
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
-        <div><h3>Rekap Semua Keluarga</h3><div className="muted">Total setoran, penarikan, dan saldo bersih sepanjang riwayat yang tersimpan.</div></div>
+        <div><h3>Rekap Tabungan Semua Keluarga</h3><div className="muted">Total setoran sepanjang riwayat yang tersimpan.</div></div>
         <div className="card-hd-actions rekap-akhir-actions">
           <button className="btn btn-sec btn-sm" onClick={exportAll}><Icon name="file_excel" size={14}/> Ekspor CSV</button>
         </div>
@@ -758,17 +785,15 @@ function RekapAkhir({ currency }) {
         <div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari nama keluarga atau nomor anggota…"/></div>
         <span className="muted rekap-akhir-count">Menampilkan {filtered.length} dari {families.length} keluarga</span>
       </div>
-      <div className="tbl-wrap"><table className="tbl rekap-akhir-table"><thead><tr><th>Keluarga</th><th>Status</th><th className="tbl-num">Total Tabungan</th><th className="tbl-num">Total Pengeluaran</th><th className="tbl-num">Saldo Bersih</th><th className="tbl-num">Transaksi</th></tr></thead><tbody>
-        {filtered.length===0 && <tr><td colSpan={6}><div className="empty-state">Tidak ada keluarga yang cocok dengan pencarian.</div></td></tr>}
+      <div className="tbl-wrap"><table className="tbl rekap-akhir-table rekap-akhir-savings-table"><thead><tr><th>Keluarga</th><th>Status</th><th className="tbl-num">Total Tabungan</th><th className="tbl-num">Transaksi Setoran</th></tr></thead><tbody>
+        {filtered.length===0 && <tr><td colSpan={4}><div className="empty-state">Tidak ada keluarga yang cocok dengan pencarian.</div></td></tr>}
         {filtered.map(k=><tr key={k.id_keluarga}>
           <td><div className="rekap-family-name"><Avatar name={k.kepala_keluarga} size="sm"/><div><b>{k.kepala_keluarga}</b><small>{k.no_anggota}</small></div></div></td>
           <td><span className={k.status==="aktif"?"badge badge-green":"badge badge-neutral"}>{k.status==="aktif"?"Aktif":"Nonaktif"}</span></td>
           <td className="tbl-num"><b style={{color:"var(--success)"}}>{fmt(k.tabungan)}</b></td>
-          <td className="tbl-num"><b style={{color:"var(--danger)"}}>{fmt(k.pengeluaran)}</b></td>
-          <td className="tbl-num"><b style={{color:k.saldo<0?"var(--danger)":"var(--ink)"}}>{fmt(k.saldo)}</b></td>
-          <td className="tbl-num">{k.transaksi}</td>
+          <td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.id_keluarga)===Number(k.id_keluarga)&&Number(p.nominal)>0).length}</td>
         </tr>)}
-      </tbody><tfoot><tr><td colSpan={2}>Total seluruh keluarga</td><td className="tbl-num">{fmt(allDeposits)}</td><td className="tbl-num">{fmt(allWithdrawals)}</td><td className="tbl-num">{fmt(allDeposits-allWithdrawals)}</td><td className="tbl-num">{S.PEMBAYARAN.length}</td></tr></tfoot></table></div>
+      </tbody><tfoot><tr><td colSpan={2}>Total seluruh keluarga</td><td className="tbl-num">{fmt(allDeposits)}</td><td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length}</td></tr></tfoot></table></div>
     </div>
   </div>;
 }
