@@ -19,6 +19,17 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     keterangan: "",
   });
   const [historyLimit, setHistoryLimit] = React.useState(10);
+  const [entryMode, setEntryMode] = React.useState("single");
+  const [bulkFamilies, setBulkFamilies] = React.useState([]);
+  const [bulkType, setBulkType] = React.useState(1);
+  const [bulkDate, setBulkDate] = React.useState(today);
+  const [bulkMonth, setBulkMonth] = React.useState(currentMonth);
+  const [bulkYear, setBulkYear] = React.useState(currentYear);
+  const [bulkMethod, setBulkMethod] = React.useState("Tunai");
+  const [bulkNote, setBulkNote] = React.useState("");
+  const [bulkAmounts, setBulkAmounts] = React.useState({});
+  const [bulkSelectAll, setBulkSelectAll] = React.useState(false);
+  const [bulkSearch, setBulkSearch] = React.useState("");
   const [saved, setSaved] = React.useState(() => [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p, _kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan", _jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"})));
 
   React.useEffect(() => {
@@ -74,10 +85,100 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     onSaved && onSaved(rec);
   };
 
+  const activeFamilies = S.KELUARGA.filter(k => k.status === "aktif").slice().sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga)));
+  const bulkDefaultAmount = Number(S.JENIS_IURAN.find(j => j.id_jenis === Number(bulkType))?.nominal_default || 0);
+  const toggleBulkFamily = (id) => {
+    setBulkFamilies(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setBulkAmounts(prev => ({...prev, [id]: prev[id] ?? bulkDefaultAmount}));
+  };
+  const submitBulk = (e) => {
+    e.preventDefault();
+    if (!bulkFamilies.length) { toast({kind:"error",title:"Pilih minimal satu keluarga"}); return; }
+    if (!bulkDate || Number.isNaN(new Date(bulkDate + "T00:00:00").getTime()) || !Number.isInteger(Number(bulkMonth)) || Number(bulkMonth)<1 || Number(bulkMonth)>12 || !Number.isInteger(Number(bulkYear)) || Number(bulkYear)<2000) {
+      toast({kind:"error",title:"Tanggal atau periode tidak valid"}); return;
+    }
+    const j = S.JENIS_IURAN.find(x => x.id_jenis === Number(bulkType));
+    if (!j) { toast({kind:"error",title:"Jenis tabungan tidak valid"}); return; }
+    const selected = bulkFamilies.map(id => S.KELUARGA.find(k => Number(k.id_keluarga) === Number(id))).filter(k => k && k.status === "aktif");
+    if (selected.length !== bulkFamilies.length) { toast({kind:"error",title:"Ada anggota yang tidak aktif atau tidak ditemukan"}); return; }
+    const invalid = selected.find(k => !Number.isFinite(Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount)) || Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount) < 1000);
+    if (invalid) { toast({kind:"error",title:"Nominal tidak valid",body:"Periksa nominal untuk " + invalid.kepala_keluarga}); return; }
+    let nextId = Math.max(0, ...S.PEMBAYARAN.map(p => Number(p.id_pembayaran)||0)) + 1;
+    const created = selected.map(k => ({
+      id_pembayaran: nextId++,
+      id_keluarga: Number(k.id_keluarga),
+      id_jenis: Number(bulkType),
+      bulan: Number(bulkMonth),
+      tahun: Number(bulkYear),
+      nominal: Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount),
+      tanggal_bayar: bulkDate,
+      metode_pembayaran: bulkMethod,
+      keterangan: bulkNote.trim(),
+      dicatat_oleh: "Thomas",
+      _kel_name: k.kepala_keluarga,
+      _jenis_name: j.nama_jenis,
+    }));
+    S.PEMBAYARAN.push(...created.map(({_kel_name,_jenis_name,...p}) => p));
+    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Mencatat setoran massal",detail:created.length+" keluarga · "+j.nama_jenis+" · "+bulkDate,tipe:"payment"});
+    S.persistSTM();
+    const next = [...created, ...saved];
+    window.__sessionPayments = next;
+    setSaved(next);
+    toast({kind:"success",title:"Setoran massal tersimpan",body:created.length+" transaksi berhasil dicatat."});
+    setBulkFamilies([]);
+    setBulkAmounts({});
+    setBulkNote("");
+    setBulkSelectAll(false);
+    onSaved && onSaved(created[0]);
+  };
+
   const fmt = (v) => S.formatCurrency(v, currency);
 
   return (
-    <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:20,alignItems:"flex-start"}}>
+    <div>
+      <div className="card mb-16">
+        <div className="card-hd">
+          <div><h3>Mode Pencatatan</h3><div className="muted" style={{fontSize:12}}>Catat satu transaksi atau beberapa keluarga sekaligus dengan tanggal yang sama.</div></div>
+          <div className="seg">
+            <button type="button" data-active={entryMode === "single" ? "1" : "0"} onClick={() => setEntryMode("single")}>Satu transaksi</button>
+            <button type="button" data-active={entryMode === "bulk" ? "1" : "0"} onClick={() => setEntryMode("bulk")}>Massal</button>
+          </div>
+        </div>
+        {entryMode === "bulk" && <form className="card-pad" onSubmit={submitBulk} style={{display:"grid",gap:14}}>
+          <div className="grid grid-3">
+            <div className="field"><label>Jenis Tabungan</label><select className="select" value={bulkType} onChange={e => {const id=Number(e.target.value);const def=Number(S.JENIS_IURAN.find(j=>j.id_jenis===id)?.nominal_default||0);setBulkType(id);setBulkAmounts(prev=>Object.fromEntries(Object.entries(prev).map(([k,v])=>[k,v===Number(S.JENIS_IURAN.find(j=>j.id_jenis===Number(bulkType))?.nominal_default||0)?def:v])));}}>{S.JENIS_IURAN.map(j=><option key={j.id_jenis} value={j.id_jenis}>{j.nama_jenis}</option>)}</select></div>
+            <div className="field"><label>Tanggal Setor</label><input className="input" type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)} required /></div>
+            <div className="field"><label>Metode Setor</label><select className="select" value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}>{S.METODE.map(m=><option key={m} value={m}>{m}</option>)}</select></div>
+          </div>
+          <div className="grid grid-3">
+            <div className="field"><label>Bulan Periode</label><select className="select" value={bulkMonth} onChange={e=>setBulkMonth(Number(e.target.value))}>{S.BULAN_ID_FULL.map((b,i)=><option key={i} value={i+1}>{b}</option>)}</select></div>
+            <div className="field"><label>Tahun</label><select className="select" value={bulkYear} onChange={e=>setBulkYear(Number(e.target.value))}>{Array.from({length:5},(_,i)=>currentYear-2+i).map(y=><option key={y} value={y}>{y}</option>)}</select></div>
+            <div className="field"><label>Keterangan <span className="muted" style={{fontWeight:400}}>(opsional, untuk semua)</span></label><input className="input" value={bulkNote} onChange={e=>setBulkNote(e.target.value)} placeholder="cth. setoran melalui koordinator"/></div>
+          </div>
+          <div className="field">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:8}}>
+              <label style={{margin:0}}>Pilih keluarga ({bulkFamilies.length} dipilih)</label>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input className="input" style={{width:180}} placeholder="Cari nama / no. anggota" value={bulkSearch} onChange={e=>setBulkSearch(e.target.value)}/>
+                <button type="button" className="btn btn-sec btn-sm" onClick={()=>{const visible=activeFamilies.filter(k=>(k.kepala_keluarga+" "+k.no_anggota).toLowerCase().includes(bulkSearch.toLowerCase()));const all=visible.every(k=>bulkFamilies.includes(k.id_keluarga));setBulkFamilies(prev=>all?prev.filter(id=>!visible.some(k=>k.id_keluarga===id)):[...new Set([...prev,...visible.map(k=>k.id_keluarga)])]);setBulkAmounts(prev=>{const n={...prev};visible.forEach(k=>{if(n[k.id_keluarga]===undefined)n[k.id_keluarga]=bulkDefaultAmount;});return n;});}}>Pilih hasil pencarian</button>
+              </div>
+            </div>
+            <div style={{maxHeight:260,overflowY:"auto",border:"1px solid var(--line)",borderRadius:10}}>
+              {activeFamilies.filter(k=>(k.kepala_keluarga+" "+k.no_anggota).toLowerCase().includes(bulkSearch.toLowerCase())).map(k=><div key={k.id_keluarga} style={{display:"grid",gridTemplateColumns:"minmax(180px,1fr) 150px",alignItems:"center",gap:12,padding:"9px 12px",borderBottom:"1px solid var(--line-2)"}}>
+                <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}><input type="checkbox" checked={bulkFamilies.includes(k.id_keluarga)} onChange={()=>toggleBulkFamily(k.id_keluarga)}/><span><b>{k.kepala_keluarga}</b><span className="muted" style={{display:"block",fontSize:11}}>{k.no_anggota}</span></span></label>
+                <div className="input-wrap"><span className="input-prefix">Rp</span><input className="input" aria-label={"Nominal "+k.kepala_keluarga} type="number" min="1000" step="500" value={bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount} onChange={e=>setBulkAmounts(prev=>({...prev,[k.id_keluarga]:Number(e.target.value)||0}))}/></div>
+              </div>)}
+              {activeFamilies.filter(k=>(k.kepala_keluarga+" "+k.no_anggota).toLowerCase().includes(bulkSearch.toLowerCase())).length===0 && <div className="empty-state">Tidak ada keluarga yang cocok.</div>}
+            </div>
+            <div className="hint">Nominal setiap keluarga bisa diubah satu per satu. Jenis, tanggal, periode, metode, dan keterangan berlaku untuk semua transaksi yang dipilih.</div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <b>Total {bulkFamilies.length} transaksi · {fmt(bulkFamilies.reduce((sum,id)=>sum+Number(bulkAmounts[id] ?? bulkDefaultAmount),0))}</b>
+            <button type="submit" className="btn btn-primary" disabled={!bulkFamilies.length}><Icon name="check" size={14}/> Simpan {bulkFamilies.length} setoran</button>
+          </div>
+        </form>}
+      </div>
+      {entryMode === "single" && <div className="grid" style={{gridTemplateColumns:"1.3fr 1fr",gap:20,alignItems:"flex-start"}}>
       <div className="card">
         <div className="card-hd">
           <div>
@@ -252,6 +353,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
           </div>
         )}
       </div>
+      </div>}
     </div>
   );
 }
