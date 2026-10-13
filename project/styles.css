@@ -51,7 +51,7 @@ button{font-family:inherit}
 .app[data-sidebar="collapsed"]{--sidebar-w:72px}
 .app[data-sidebar="iconOnly"]{--sidebar-w:72px}
 
-.sidebar{background:var(--sidebar);color:var(--sidebar-fg);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow:hidden}
+.sidebar{background:var(--sidebar);color:var(--sidebar-fg);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(240,227,198,.35) transparent}
 .sb-brand{display:flex;align-items:center;gap:12px;padding:6px 8px 18px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:10px}
 .sb-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#d88a6c);display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
 .sb-name{font-weight:700;font-size:13.5px;letter-spacing:.01em;white-space:nowrap}
@@ -66,7 +66,7 @@ button{font-family:inherit}
 .sb-badge{background:rgba(255,255,255,.1);color:var(--sidebar-fg);font-size:10.5px;padding:2px 7px;border-radius:99px;font-weight:600;font-variant-numeric:tabular-nums}
 .sb-badge.warn{background:var(--danger);color:#fff}
 
-.sb-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;display:flex;align-items:center;gap:10px;padding-left:8px}
+.sb-foot{margin-top:auto;flex-shrink:0;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;display:flex;align-items:center;gap:10px;padding-left:8px}
 .sb-avatar{width:32px;height:32px;border-radius:50%;background:#7a4f37;display:grid;place-items:center;color:#f5ebd9;font-weight:600;font-size:12.5px;flex-shrink:0}
 .sb-user-name{font-size:12.5px;font-weight:600;color:var(--sidebar-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-user-role{font-size:10.5px;color:var(--sidebar-muted);white-space:nowrap}
@@ -91,6 +91,17 @@ button{font-family:inherit}
 .app[data-sidebar="iconOnly"] .sb-brand{justify-content:center;padding:6px 0 14px}
 .app[data-sidebar="collapsed"] .sb-foot,
 .app[data-sidebar="iconOnly"] .sb-foot{padding-left:0;justify-content:center}
+
+.family-autocomplete{min-width:0}
+.family-suggestions{position:absolute;z-index:45;top:calc(100% + 4px);left:0;right:0;max-height:260px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(42,29,18,.16);padding:4px}
+.family-suggestion{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:var(--ink);cursor:pointer;font:inherit}
+.family-suggestion:hover,.family-suggestion.is-selected{background:var(--accent-soft)}
+.family-suggestion span,.family-suggestion b,.family-suggestion small{display:block}
+.family-suggestion b{font-size:13px;font-weight:600}
+.family-suggestion small{font-size:11px;color:var(--muted);margin-top:2px}
+.family-suggestion-empty{padding:12px;font-size:12px;color:var(--muted)}
+.rekap-akhir-savings-only{grid-template-columns:minmax(0,1fr)}
+.rekap-akhir-savings-table{min-width:560px}
 
 /* ───────── Main ───────── */
 .main{display:flex;flex-direction:column;min-width:0}
