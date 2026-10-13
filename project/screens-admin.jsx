@@ -67,14 +67,18 @@ function JenisIuran({ currency }) {
                <button className="btn btn-ghost" onClick={() => setEdit(null)}>Batal</button>
                <button className="btn btn-primary" onClick={() => {
                  if (!edit.nama_jenis.trim()) { toast({kind:"error",title:"Nama wajib diisi"}); return; }
+                 let nextList;
                  if (edit.id_jenis) {
-                   setList(list.map(x => x.id_jenis === edit.id_jenis ? edit : x));
+                   nextList = list.map(x => x.id_jenis === edit.id_jenis ? edit : x);
                    toast({kind:"success",title:"Jenis tabungan diperbarui",body:edit.nama_jenis});
                  } else {
-                   const id = Math.max(...list.map(x => x.id_jenis)) + 1;
-                   setList([...list, {...edit, id_jenis: id}]);
+                   const id = Math.max(0, ...list.map(x => Number(x.id_jenis) || 0)) + 1;
+                   nextList = [...list, {...edit, id_jenis: id}];
                    toast({kind:"success",title:"Jenis tabungan ditambahkan",body:edit.nama_jenis});
                  }
+                 S.JENIS_IURAN.splice(0, S.JENIS_IURAN.length, ...nextList);
+                 S.persistSTM();
+                 setList(nextList);
                  setEdit(null);
                }}>
                  <Icon name="check" size={14}/> Simpan
