@@ -1,0 +1,284 @@
+// Google Sheets cloud storage. OAuth token is kept in memory only; no client secret is stored in the site.
+(() => {
+  const CONFIG_KEY = "stm-google-sheets-config-v1";
+  const READY_KEY = "stm-google-sheets-ready-v1";
+  const TAB_COLUMNS = {
+    KELUARGA: ["id_keluarga","no_anggota","kepala_keluarga","no_hp","status","tanggal_gabung"],
+    JENIS_IURAN: ["id_jenis","nama_jenis","nominal_default","tipe"],
+    PEMBAYARAN: ["id_pembayaran","id_keluarga","id_jenis","bulan","tahun","nominal","tanggal_bayar","metode_pembayaran","keterangan","dicatat_oleh","jenis_transaksi"],
+    USERS: ["id_user","nama","username","role","last_login"],
+    AKTIVITAS: ["id","waktu","user","aksi","detail","tipe"]
+  };
+  let accessToken = null;
+  let tokenClient = null;
+  let saveTimer = null;
+  let syncing = false;
+  let queued = false;
+
+  function readConfig() {
+    try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}"); }
+    catch (_) { return {}; }
+  }
+  function writeConfig(next) {
+    const current = readConfig();
+    const merged = { ...current, ...next };
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(merged));
+    window.dispatchEvent(new CustomEvent("stm:cloud-status", { detail: { config: merged } }));
+    return merged;
+  }
+  function emit(status, message) {
+    window.dispatchEvent(new CustomEvent("stm:cloud-status", { detail: { status, message, config: readConfig() } }));
+  }
+  function setReady(value) {
+    if (value) localStorage.setItem(READY_KEY, "1");
+    else localStorage.removeItem(READY_KEY);
+  }
+  function isReady() { return localStorage.getItem(READY_KEY) === "1"; }
+  function waitForGoogle() {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const check = () => {
+        if (window.google?.accounts?.oauth2) return resolve();
+        if (++attempts > 40) return reject(new Error("Google Identity Services belum termuat. Muat ulang halaman dan coba lagi."));
+        setTimeout(check, 150);
+      };
+      check();
+    });
+  }
+  function authorize() {
+    return waitForGoogle().then(() => new Promise((resolve, reject) => {
+      const config = readConfig();
+      if (!config.clientId) return reject(new Error("Masukkan OAuth Client ID terlebih dahulu."));
+      tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: config.clientId,
+        scope: "https://www.googleapis.com/auth/drive.file",
+        callback: async (response) => {
+          if (response.error || !response.access_token) {
+            emit("error", response.error_description || response.error || "Google authorization gagal.");
+            reject(new Error(response.error_description || response.error || "Google authorization gagal."));
+            return;
+          }
+          accessToken = response.access_token;
+          emit("connected", "Terhubung ke Google. Token hanya disimpan sementara di memori browser.");
+          resolve();
+        },
+        error_callback: (error) => {
+          const message = error?.message || "Jendela login Google tidak dapat dibuka. Izinkan pop-up lalu coba lagi.";
+          emit("error", message); reject(new Error(message));
+        }
+      });
+      tokenClient.requestAccessToken();
+    }));
+  }
+  async function api(url, options = {}) {
+    if (!accessToken) throw new Error("Hubungkan akun Google terlebih dahulu.");
+    const response = await fetch(url, {
+      ...options,
+      headers: { Authorization: "Bearer " + accessToken, ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }
+    });
+    const raw = await response.text();
+    let body = {};
+    try { body = raw ? JSON.parse(raw) : {}; } catch (_) {}
+    if (!response.ok) {
+      const message = body?.error?.message || ("Google API error " + response.status);
+      if (response.status === 401) accessToken = null;
+      throw new Error(message);
+    }
+    return body;
+  }
+  async function createSpreadsheet() {
+    const config = readConfig();
+    if (!accessToken) await authorize();
+    emit("working", "Membuat spreadsheet baru di Google Drive…");
+    const result = await api("https://sheets.googleapis.com/v4/spreadsheets", {
+      method: "POST",
+      body: JSON.stringify({
+        properties: { title: "STM Dos Ni Roha — Database" },
+        sheets: Object.keys(TAB_COLUMNS).map(title => ({ properties: { title } }))
+      })
+    });
+    writeConfig({ spreadsheetId: result.spreadsheetId, spreadsheetUrl: result.spreadsheetUrl || ("https://docs.google.com/spreadsheets/d/" + result.spreadsheetId + "/edit") });
+    setReady(false);
+    emit("connected", "Spreadsheet dibuat. Pilih “Upload data perangkat ini” untuk mengisi data awal.");
+    return result;
+  }
+  function toSheetRows(name, records) {
+    const fields = [...new Set([...TAB_COLUMNS[name], ...records.flatMap(row => Object.keys(row))])];
+    return [fields, ...records.map(record => fields.map(field => {
+      const value = record[field];
+      return value == null ? "" : (typeof value === "object" ? JSON.stringify(value) : value);
+    }))];
+  }
+  async function saveAll() {
+    const config = readConfig();
+    if (!accessToken || !config.spreadsheetId || !isReady()) return;
+    if (syncing) { queued = true; return; }
+    syncing = true;
+    emit("syncing", "Menyimpan perubahan ke Google Sheets…");
+    try {
+      const sid = encodeURIComponent(config.spreadsheetId);
+      const ranges = Object.keys(TAB_COLUMNS).map(name => name + "!A:AZ");
+      await api("https://sheets.googleapis.com/v4/spreadsheets/" + sid + "/values:batchClear", {
+        method: "POST", body: JSON.stringify({ ranges })
+      });
+      const S = window.STM;
+      const datasets = {
+        KELUARGA: S.KELUARGA,
+        JENIS_IURAN: S.JENIS_IURAN,
+        PEMBAYARAN: S.PEMBAYARAN,
+        USERS: S.USERS,
+        AKTIVITAS: S.AKTIVITAS
+      };
+      const data = Object.keys(TAB_COLUMNS).map(name => ({
+        range: name + "!A1",
+        majorDimension: "ROWS",
+        values: toSheetRows(name, datasets[name])
+      }));
+      await api("https://sheets.googleapis.com/v4/spreadsheets/" + sid + "/values:batchUpdate", {
+        method: "POST", body: JSON.stringify({ valueInputOption: "RAW", data })
+      });
+      emit("saved", "Semua data tersimpan di Google Sheets.");
+    } catch (error) {
+      emit("error", "Sinkronisasi gagal: " + error.message + ". Data lokal tetap tersedia.");
+      throw error;
+    } finally {
+      syncing = false;
+      if (queued) { queued = false; saveAll().catch(() => {}); }
+    }
+  }
+  async function loadAll() {
+    const config = readConfig();
+    if (!accessToken) await authorize();
+    if (!config.spreadsheetId) throw new Error("Buat spreadsheet terlebih dahulu.");
+    emit("working", "Membaca data dari Google Sheets…");
+    const sid = encodeURIComponent(config.spreadsheetId);
+    const ranges = Object.keys(TAB_COLUMNS).map(name => name + "!A:AZ");
+    const response = await api("https://sheets.googleapis.com/v4/spreadsheets/" + sid + "/values:batchGet?ranges=" + ranges.map(encodeURIComponent).join("&ranges="), { method: "GET" });
+    const mapped = {};
+    for (const valueRange of response.valueRanges || []) {
+      const name = (valueRange.range || "").split("!")[0].replace(/^'/, "").replace(/'$/, "");
+      if (!TAB_COLUMNS[name]) continue;
+      const values = valueRange.values || [];
+      if (values.length < 2) { mapped[name] = []; continue; }
+      const headers = values[0].map(v => String(v));
+      mapped[name] = values.slice(1).filter(row => row.some(v => v !== "")).map(row => {
+        const record = {};
+        headers.forEach((key, i) => {
+          let value = row[i] ?? "";
+          if (value !== "" && ["id_keluarga","id_jenis","id_pembayaran","id_user","id","bulan","tahun","nominal","nominal_default"].includes(key)) {
+            const number = Number(value);
+            if (Number.isFinite(number)) value = number;
+          }
+          record[key] = value;
+        });
+        return record;
+      });
+    }
+    const S = window.STM;
+    for (const [tab, key] of [["KELUARGA","KELUARGA"],["JENIS_IURAN","JENIS_IURAN"],["PEMBAYARAN","PEMBAYARAN"],["USERS","USERS"],["AKTIVITAS","AKTIVITAS"]]) {
+      if (Array.isArray(mapped[tab])) S[key].splice(0, S[key].length, ...mapped[tab]);
+    }
+    S.persistSTM({ skipCloud: true });
+    setReady(true);
+    emit("saved", "Data cloud berhasil dimuat ke website.");
+    return mapped;
+  }
+  async function uploadLocal() {
+    const config = readConfig();
+    if (!accessToken) await authorize();
+    if (!config.spreadsheetId) throw new Error("Buat spreadsheet terlebih dahulu.");
+    setReady(true);
+    try { await saveAll(); }
+    catch (error) { setReady(false); throw error; }
+  }
+  function scheduleSave() {
+    if (!accessToken || !readConfig().spreadsheetId || !isReady()) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveAll().catch(() => {}), 900);
+  }
+  async function connect() {
+    await authorize();
+    const config = readConfig();
+    if (config.spreadsheetId && isReady()) {
+      await loadAll();
+    } else {
+      emit("connected", config.spreadsheetId ? "Terhubung. Pilih untuk memuat data cloud atau mengunggah data perangkat ini." : "Terhubung. Buat spreadsheet untuk mulai menyimpan data.");
+    }
+  }
+  window.STMCloudSync = { readConfig, writeConfig, authorize, connect, createSpreadsheet, loadAll, uploadLocal, scheduleSave, isConnected: () => !!accessToken, isReady };
+  window.addEventListener("stm:data-updated", scheduleSave);
+})();
+function CloudSettings() {
+  const S = window.STMCloudSync;
+  const [clientId, setClientId] = React.useState(S.readConfig().clientId || "");
+  const [spreadsheetId, setSpreadsheetId] = React.useState(S.readConfig().spreadsheetId || "");
+  const [spreadsheetUrl, setSpreadsheetUrl] = React.useState(S.readConfig().spreadsheetUrl || "");
+  const [status, setStatus] = React.useState({ status: "idle", message: "Belum terhubung. Data tetap disimpan di browser sampai sinkronisasi diaktifkan." });
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState("");
+  React.useEffect(() => {
+    const handler = (event) => {
+      const detail = event.detail || {};
+      setStatus({ status: detail.status || "idle", message: detail.message || "" });
+      if (detail.config) {
+        setSpreadsheetId(detail.config.spreadsheetId || "");
+        setSpreadsheetUrl(detail.config.spreadsheetUrl || "");
+      }
+    };
+    window.addEventListener("stm:cloud-status", handler);
+    return () => window.removeEventListener("stm:cloud-status", handler);
+  }, []);
+  const run = async (task) => {
+    setBusy(true); setError("");
+    try { await task(); }
+    catch (e) { setError(e.message || String(e)); }
+    finally { setBusy(false); }
+  };
+  const saveSettings = () => {
+    const id = clientId.trim();
+    if (!id.endsWith(".apps.googleusercontent.com")) {
+      setError("OAuth Client ID belum valid. Biasanya berakhir dengan .apps.googleusercontent.com");
+      return;
+    }
+    const next = S.writeConfig({ clientId: id, spreadsheetId: spreadsheetId.trim(), spreadsheetUrl });
+    setClientId(next.clientId);
+    setError("");
+    setStatus({ status: "idle", message: "Pengaturan disimpan pada browser ini." });
+  };
+  const badge = status.status === "saved" ? "Tersimpan" : status.status === "syncing" || status.status === "working" ? "Sedang bekerja" : status.status === "connected" ? "Terhubung" : status.status === "error" ? "Perlu perhatian" : "Belum aktif";
+  const badgeClass = status.status === "saved" ? "badge-green" : status.status === "error" ? "badge-red" : "badge-neutral";
+  return (
+    <div className="grid" style={{gap:16}}>
+      <div className="card card-pad">
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+          <div className="stat-ico"><Icon name="settings" size={17}/></div>
+          <div><h3 style={{margin:0}}>Penyimpanan Google Sheets</h3><div className="muted" style={{fontSize:12}}>Database online pribadi untuk STM Dos Ni Roha</div></div>
+        </div>
+        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Website ini tetap berjalan di GitHub Pages. Setelah Google OAuth diatur dan kamu menghubungkan akun, data keluarga, jenis tabungan, transaksi, pengguna, dan aktivitas akan disimpan ke spreadsheet milik akun Google kamu.</p>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:12}}>
+          <span className={"badge " + badgeClass}>{badge}</span><span className="muted" style={{fontSize:12}}>{status.message}</span>
+        </div>
+        <div className="grid grid-2" style={{gap:12}}>
+          <div className="field"><label>Google OAuth Client ID</label><input className="input" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="123456789-abc.apps.googleusercontent.com"/><div className="hint">Public client ID saja — jangan masukkan client secret.</div></div>
+          <div className="field"><label>Spreadsheet ID (otomatis setelah dibuat)</label><input className="input" value={spreadsheetId} onChange={e=>setSpreadsheetId(e.target.value)} placeholder="Dibuat dari tombol di bawah" /></div>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
+          <button className="btn btn-sec" disabled={busy} onClick={saveSettings}><Icon name="check" size={14}/> Simpan Pengaturan</button>
+          <button className="btn btn-primary" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ saveSettings(); if (!S.readConfig().clientId) throw new Error("Simpan Client ID yang valid terlebih dahulu."); await S.connect(); })}> <Icon name="user" size={14}/> Hubungkan Google</button>
+          <button className="btn btn-sec" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ saveSettings(); if (!S.readConfig().clientId) throw new Error("Simpan Client ID yang valid terlebih dahulu."); if (!S.isConnected()) await S.authorize(); const created=await S.createSpreadsheet(); setSpreadsheetId(created.spreadsheetId); setSpreadsheetUrl(created.spreadsheetUrl || ""); })}><Icon name="plus" size={14}/> Buat Spreadsheet di Drive</button>
+        </div>
+        {spreadsheetUrl && <p style={{fontSize:13,marginTop:12}}><a href={spreadsheetUrl} target="_blank" rel="noreferrer">Buka database STM di Google Sheets ↗</a></p>}
+      </div>
+      <div className="card card-pad">
+        <h3 style={{marginTop:0}}>Sinkronisasi data</h3>
+        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Pilih sumber data awal dengan sengaja. “Muat dari Google Sheets” mengganti data browser ini dengan data cloud. “Upload data perangkat ini” mengganti isi spreadsheet dengan data browser ini. Setelah pilihan pertama berhasil, perubahan berikutnya otomatis disinkronkan saat tersambung.</p>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button className="btn btn-primary" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ saveSettings(); await S.loadAll(); })}><Icon name="download" size={14}/> Muat dari Google Sheets</button>
+          <button className="btn btn-sec" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ saveSettings(); await S.uploadLocal(); })}><Icon name="file_excel" size={14}/> Upload data perangkat ini</button>
+        </div>
+        {error && <div className="badge badge-red" style={{marginTop:12,whiteSpace:"normal"}}>{error}</div>}
+        <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Catatan keamanan: akses memakai Google OAuth dan scope <code>drive.file</code> agar aplikasi hanya mendapat akses ke file Drive yang dibuat/dibuka lewat aplikasi ini. Access token tidak disimpan permanen di browser. Tetap ekspor CSV sebagai cadangan.</div>
+      </div>
+    </div>
+  );
+}
