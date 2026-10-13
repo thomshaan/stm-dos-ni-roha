@@ -680,7 +680,7 @@ function RekapKeluarga({ currency }) {
         </div>
       </div>
       <div className="card-pad family-picker-grid" style={{display:"grid",gridTemplateColumns:"minmax(220px,1fr) minmax(260px,1.2fr)",gap:12}}>
-        <div className="field"><label>Cari keluarga</label><div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Nama kepala keluarga / STM-001"/></div><div className="hint">{matches.length} keluarga cocok</div></div>
+        <div className="field"><label>Cari keluarga</label><div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>{setQuery(e.target.value);setSelectedId("");}} placeholder="Nama kepala keluarga / STM-001"/></div><div className="hint">{matches.length} keluarga cocok</div></div>
         <div className="field"><label>Pilih keluarga</label><select className="select" value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">— Pilih keluarga —</option>{matches.map(k=><option key={k.id_keluarga} value={k.id_keluarga}>{k.no_anggota} · {k.kepala_keluarga}{k.status==="nonaktif"?" (nonaktif)":""}</option>)}</select></div>
       </div>
     </div>
@@ -695,7 +695,7 @@ function RekapKeluarga({ currency }) {
         </div>
       </div>
       <div className="card">
-        <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Aktivitas Bulanan</h3><div className="muted" style={{fontSize:12}}>Bandingkan uang masuk dan uang yang diambil.</div></div><div className="card-hd-actions"><label style={{fontSize:12,color:"var(--muted)"}}>Tahun <select className="select" style={{width:100,marginLeft:6}} value={tahun} onChange={e=>setTahun(Number(e.target.value))}>{Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
+        <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Aktivitas Bulanan</h3><div className="muted" style={{fontSize:12}}>Bandingkan uang masuk dan uang yang diambil.</div></div><div className="card-hd-actions no-print"><label style={{fontSize:12,color:"var(--muted)"}}>Tahun <select className="select" style={{width:100,marginLeft:6}} value={tahun} onChange={e=>setTahun(Number(e.target.value))}>{Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
         <div className="card-pad"><div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Setoran per bulan · {tahun}</div><BarChart data={monthlyDeposits} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)}/><div style={{fontWeight:700,fontSize:12,margin:"20px 0 8px"}}>Penarikan per bulan · {tahun}</div><BarChart data={monthlyWithdrawals} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--danger)" softAccent="var(--danger-soft)"/></div>
       </div>
       <div className="card">
