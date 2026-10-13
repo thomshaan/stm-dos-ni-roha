@@ -53,6 +53,10 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     const j = S.JENIS_IURAN.find(x => x.id_jenis === Number(form.id_jenis));
     if (!k || k.status !== "aktif") { toast({ kind:"error", title:"Anggota tidak ditemukan atau non-aktif" }); return; }
     if (!j) { toast({ kind:"error", title:"Jenis tabungan tidak valid" }); return; }
+    if (form.jenis_transaksi === "penarikan") {
+      const saldoJenis = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(form.id_keluarga) && Number(p.id_jenis) === Number(form.id_jenis)).reduce((sum,p) => sum + Number(p.nominal), 0);
+      if (Number(form.nominal) > saldoJenis) { toast({kind:"error",title:"Saldo tidak mencukupi",body:"Saldo tersedia untuk jenis tabungan ini: " + S.formatCurrency(Math.max(0,saldoJenis), currency)}); return; }
+    }
     const rec = {
       id_pembayaran: Math.max(0, ...S.PEMBAYARAN.map(p => Number(p.id_pembayaran) || 0)) + 1,
       ...form,
@@ -107,6 +111,16 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     if (selected.length !== bulkFamilies.length) { toast({kind:"error",title:"Ada anggota yang tidak aktif atau tidak ditemukan"}); return; }
     const invalid = selected.find(k => !Number.isFinite(Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount)) || Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount) < 1000);
     if (invalid) { toast({kind:"error",title:"Nominal tidak valid",body:"Periksa nominal untuk " + invalid.kepala_keluarga}); return; }
+    if (bulkDirection === "penarikan") {
+      const insufficient = selected.find(k => {
+        const saldoJenis = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(k.id_keluarga) && Number(p.id_jenis) === Number(bulkType)).reduce((sum,p) => sum + Number(p.nominal), 0);
+        return Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount) > saldoJenis;
+      });
+      if (insufficient) {
+        const saldoJenis = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(insufficient.id_keluarga) && Number(p.id_jenis) === Number(bulkType)).reduce((sum,p) => sum + Number(p.nominal), 0);
+        toast({kind:"error",title:"Saldo tidak mencukupi",body:insufficient.kepala_keluarga + " hanya memiliki " + S.formatCurrency(Math.max(0,saldoJenis), currency) + " untuk jenis tabungan ini."}); return;
+      }
+    }
     let nextId = Math.max(0, ...S.PEMBAYARAN.map(p => Number(p.id_pembayaran)||0)) + 1;
     const created = selected.map(k => ({
       id_pembayaran: nextId++,
