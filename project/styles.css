@@ -334,7 +334,7 @@ button{font-family:inherit}
   .pdf-report-header small { font-size:9pt !important; color:#555 !important; }
   .pdf-report-footer { display:block !important; margin-top:16px !important; padding-top:8px !important; border-top:1px solid #bbb !important; font-size:9pt !important; color:#333 !important; }
   .pdf-report-header, .pdf-report-footer { background:#fff !important; }
-  .chart-wrap, .chart-svg, .rekap-akhir-charts, .rekap-chart-title, .legend, .tooltip { display:none !important; }
+  .chart-wrap, .chart-svg, .rekap-akhir-charts, .rekap-chart-title, .legend, .tooltip, .rekap-akhir-chart-card { display:none !important; }
   .sb-mark, .sb-brand, .sb-avatar, .avatar, .stat-ico, .rekap-family-name .avatar { display:none !important; }
   .app[data-route="rekap-keluarga"] .content .card:not(.family-history-report) { display:none !important; }
   .report-title { break-after:avoid; }
@@ -356,7 +356,7 @@ button{font-family:inherit}
 
 
 /* Rekap Akhir + responsive shell improvements */
-.rekap-akhir-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.rekap-akhir-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
 .rekap-akhir-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
 .rekap-chart-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;margin-bottom:10px}
 .rekap-akhir-toolbar{flex-wrap:wrap}
