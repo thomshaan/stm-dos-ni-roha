@@ -106,6 +106,13 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
   };
 
   const activeFamilies = S.KELUARGA.filter(k => k.status === "aktif").slice().sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga)));
+  const matchingFamilies = activeFamilies.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(familySearch.trim().toLowerCase()));
+  const chooseFamily = (k) => {
+    setForm(f => ({...f, id_keluarga: String(k.id_keluarga)}));
+    setFamilySearch(k.kepala_keluarga);
+    setFamilyDropdownOpen(false);
+  };
+  const selectedFamily = activeFamilies.find(k => String(k.id_keluarga) === String(form.id_keluarga));
   const bulkDefaultAmount = Number(S.JENIS_IURAN.find(j => j.id_jenis === Number(bulkType))?.nominal_default || 0);
   const toggleBulkFamily = (id) => {
     setBulkFamilies(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -234,27 +241,33 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
                   setForm(f => ({...f, id_keluarga:""}));
                   setFamilyDropdownOpen(true);
                 }}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && familyDropdownOpen && matchingFamilies.length) { e.preventDefault(); chooseFamily(matchingFamilies[0]); }
+                  if (e.key === "Escape") setFamilyDropdownOpen(false);
+                }}
+                onBlur={() => {
+                  const exact = activeFamilies.filter(k => String(k.kepala_keluarga).toLowerCase() === familySearch.trim().toLowerCase() || String(k.no_anggota).toLowerCase() === familySearch.trim().toLowerCase());
+                  if (exact.length === 1 && !form.id_keluarga) chooseFamily(exact[0]);
+                  else setTimeout(() => setFamilyDropdownOpen(false), 120);
+                }}
                 placeholder="Ketik nama keluarga atau nomor anggota…"
                 autoComplete="off"
               />
               {familyDropdownOpen && <div className="family-suggestions" role="listbox">
-                {activeFamilies.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(familySearch.trim().toLowerCase())).slice(0,8).map(k => (
+                {matchingFamilies.slice(0,8).map(k => (
                   <button type="button" role="option" aria-selected={String(form.id_keluarga)===String(k.id_keluarga)} key={k.id_keluarga}
                     className={"family-suggestion"+(String(form.id_keluarga)===String(k.id_keluarga)?" is-selected":"")}
                     onMouseDown={e=>e.preventDefault()}
-                    onClick={() => {
-                      setForm(f => ({...f, id_keluarga:String(k.id_keluarga)}));
-                      setFamilySearch(k.kepala_keluarga);
-                      setFamilyDropdownOpen(false);
-                    }}>
+                    onClick={() => chooseFamily(k)}>
                     <span><b>{k.kepala_keluarga}</b><small>{k.no_anggota}</small></span>
                     {String(form.id_keluarga)===String(k.id_keluarga) && <Icon name="check" size={15}/>}
                   </button>
                 ))}
-                {activeFamilies.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(familySearch.trim().toLowerCase())).length===0 && <div className="family-suggestion-empty">Tidak ada keluarga yang cocok.</div>}
+                {matchingFamilies.length===0 && <div className="family-suggestion-empty">Tidak ada keluarga yang cocok.</div>}
               </div>}
             </div>
-            <div className="hint">{form.id_keluarga ? "Terpilih: "+(S.KELUARGA.find(k=>String(k.id_keluarga)===String(form.id_keluarga))?.kepala_keluarga || "") : "Ketik nama, lalu pilih keluarga dari hasil pencarian."}</div>
+            {selectedFamily && <div className="family-selected-chip"><Icon name="check" size={13}/><span>Terpilih: <b>{selectedFamily.kepala_keluarga}</b> · {selectedFamily.no_anggota}</span><button type="button" aria-label="Ganti pilihan keluarga" onClick={() => {setForm(f=>({...f,id_keluarga:""}));setFamilySearch("");setFamilyDropdownOpen(true);}}>Ganti</button></div>}
+            <div className="hint">{form.id_keluarga ? "Keluarga sudah dipilih. Kamu bisa mengetik nama lain untuk menggantinya." : "Ketik nama keluarga atau nomor anggota, lalu pilih hasilnya. Tekan Enter untuk memilih hasil pertama."}</div>
           </div>
 
           <div className="grid grid-3">

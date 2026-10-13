@@ -80,17 +80,20 @@ function Sidebar({ route, setRoute }) {
           <div className="sb-sub">Admin Panel</div>
         </div>
       </div>
-      {NAV.map((item, i) => {
-        if (item.section) return <div key={`s${i}`} className="sb-section">{item.section}</div>;
-        const active = route === item.id;
-        return (
-          <div key={item.id} className="sb-item" data-active={active ? "1" : "0"}
-               onClick={() => setRoute(item.id)} title={item.label}>
-            <span className="sb-ico"><Icon name={item.icon} size={18}/></span>
-            <span className="sb-label">{item.label}</span>
-          </div>
-        );
-      })}
+      <nav className="sb-nav" aria-label="Navigasi utama">
+        {NAV.map((item, i) => {
+          if (item.section) return <div key={`s${i}`} className="sb-section">{item.section}</div>;
+          const active = route === item.id;
+          return (
+            <div key={item.id} className="sb-item" data-active={active ? "1" : "0"}
+                 onClick={() => setRoute(item.id)} title={item.label} role="button" tabIndex={0}
+                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setRoute(item.id); }}>
+              <span className="sb-ico"><Icon name={item.icon} size={18}/></span>
+              <span className="sb-label">{item.label}</span>
+            </div>
+          );
+        })}
+      </nav>
       <div className="sb-foot">
         <div className="sb-avatar">T</div>
         <div style={{minWidth:0,flex:1}}>
