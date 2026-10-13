@@ -136,9 +136,27 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
                   <td className="tbl-num"><b>{fmt(k.total)}</b></td>
                   <td className="tab-num" style={{fontSize:12.5}}>{k.last_pay}</td>
                   <td>
-                    <button className="btn btn-sec btn-sm" onClick={(e) => { e.stopPropagation(); onAddPayment(k); }}>
-                      <Icon name="plus" size={12}/> Setor
-                    </button>
+                    <div style={{display:"flex",gap:5}}>
+                      <button className="btn btn-sec btn-sm" onClick={(e) => {
+                        e.stopPropagation();
+                        const nama = window.prompt("Nama kepala keluarga", k.kepala_keluarga);
+                        if (nama === null || !nama.trim()) return;
+                        const hp = window.prompt("Nomor HP", k.no_hp || "");
+                        if (hp === null) return;
+                        const before = S.KELUARGA.find(x => x.id_keluarga === k.id_keluarga);
+                        if (!before) return;
+                        const oldName = before.kepala_keluarga;
+                        before.kepala_keluarga = nama.trim();
+                        before.no_hp = hp.trim();
+                        S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Memperbarui data anggota",detail:oldName+" -> "+before.kepala_keluarga,tipe:"update"});
+                        S.persistSTM();
+                        setDetail({...before});
+                        setDataVersion(v => v + 1);
+                      }} title="Edit data keluarga"><Icon name="edit" size={12}/> Edit</button>
+                      <button className="btn btn-sec btn-sm" onClick={(e) => { e.stopPropagation(); onAddPayment(k); }}>
+                        <Icon name="plus" size={12}/> Setor
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
