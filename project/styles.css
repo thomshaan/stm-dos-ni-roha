@@ -360,7 +360,7 @@ button{font-family:inherit}
 
 
 /* Rekap Akhir + responsive shell improvements */
-.rekap-akhir-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rekap-akhir-summary{grid-template-columns:minmax(0,1fr)}
 .rekap-akhir-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
 .rekap-chart-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;margin-bottom:10px}
 .rekap-akhir-toolbar{flex-wrap:wrap}
@@ -374,7 +374,7 @@ button{font-family:inherit}
 .rekap-family-name small{color:var(--muted);font-size:11px;margin-top:2px}
 @media (max-width: 900px) {
   .rekap-akhir-charts{grid-template-columns:1fr}
-  .rekap-akhir-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rekap-akhir-summary{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width: 760px) {
   .app{display:flex;flex-direction:column}
@@ -394,7 +394,7 @@ button{font-family:inherit}
   .card-pad{padding:14px}
   .card-hd-actions{flex-wrap:wrap}
   .grid-3,.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .rekap-akhir-summary{grid-template-columns:1fr 1fr}
+  .rekap-akhir-summary{grid-template-columns:minmax(0,1fr)}
   
   .rekap-akhir-toolbar .card-hd-actions{margin-left:0}
 }
