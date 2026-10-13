@@ -785,6 +785,12 @@ function RekapAkhir({ currency }) {
   }).sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
   const filtered = families.filter(k => (String(k.kepala_keluarga) + " " + String(k.no_anggota)).toLowerCase().includes(query.trim().toLowerCase()));
   const allDeposits = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
+  const withdrawalTransactions = S.PEMBAYARAN
+    .filter(p => Number(p.nominal) < 0)
+    .slice()
+    .sort((a,b) => String(a.tanggal_bayar).localeCompare(String(b.tanggal_bayar)) || Number(a.id_pembayaran)-Number(b.id_pembayaran));
+  const allWithdrawals = withdrawalTransactions.reduce((sum,p) => sum + Math.abs(Number(p.nominal) || 0), 0);
+  const netBalance = allDeposits - allWithdrawals;
   const years = Array.from(new Set([...S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite), new Date().getFullYear()])).sort((a,b)=>a-b);
   const depositsByMonth = S.BULAN_ID.map((_,i) => S.PEMBAYARAN.filter(p=>Number(p.tahun)===Number(chartYear) && Number(p.bulan)===i+1 && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
   const exportAll = () => {
@@ -794,9 +800,10 @@ function RekapAkhir({ currency }) {
   return <div className="grid rekap-akhir-page" style={{gap:16}}>
     <div className="pdf-report-header"><h1>Rekap Tabungan Semua Keluarga</h1><div>Seluruh riwayat transaksi</div><small>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</small></div>
     <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
-    <div className="grid grid-2 rekap-akhir-summary">
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Tabungan Sepanjang Waktu</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Keluarga & Transaksi</div><div className="stat-ico"><Icon name="users" size={16}/></div></div><div className="stat-val" style={{fontSize:22}}>{families.length}</div><div className="stat-sub">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length} transaksi setoran tercatat</div></div>
+    <div className="grid grid-3 rekap-akhir-summary">
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Setoran</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Penarikan</div><div className="stat-ico"><Icon name="minus" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">{withdrawalTransactions.length} transaksi penarikan · identitas dirahasiakan</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih</div><div className="stat-ico"><Icon name="wallet" size={16}/></div></div><div className="stat-val" style={{color:netBalance<0?"var(--danger)":"var(--success)",fontSize:22}}>{fmt(netBalance)}</div><div className="stat-sub">Total setoran − total penarikan</div></div>
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
@@ -806,6 +813,19 @@ function RekapAkhir({ currency }) {
       <div className="card-pad rekap-akhir-charts rekap-akhir-savings-only">
         <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--success)"}}/> Total setoran per bulan · {chartYear}</div><BarChart data={depositsByMonth} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--success)" softAccent="var(--success-soft)"/></section>
       </div>
+    </div>
+    <div className="card rekap-akhir-withdrawals">
+      <div className="card-hd">
+        <div><h3>Riwayat Penarikan</h3><div className="muted">Nama keluarga tidak ditampilkan untuk menjaga privasi.</div></div>
+      </div>
+      <div className="tbl-wrap"><table className="tbl rekap-akhir-table">
+        <thead><tr><th>Tanggal</th><th>Jenis Transaksi</th><th className="tbl-num">Nominal Penarikan</th></tr></thead>
+        <tbody>
+          {withdrawalTransactions.length===0 && <tr><td colSpan={3}><div className="empty-state">Belum ada transaksi penarikan.</div></td></tr>}
+          {withdrawalTransactions.map((p,i)=><tr key={p.id_pembayaran}><td className="tab-num">{p.tanggal_bayar || "—"}</td><td>Penarikan</td><td className="tbl-num"><b style={{color:"var(--danger)"}}>{fmt(Math.abs(Number(p.nominal)))}</b></td></tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={2}>Total Penarikan</td><td className="tbl-num"><b>{fmt(allWithdrawals)}</b></td></tr></tfoot>
+      </table></div>
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
