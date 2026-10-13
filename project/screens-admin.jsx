@@ -67,14 +67,18 @@ function JenisIuran({ currency }) {
                <button className="btn btn-ghost" onClick={() => setEdit(null)}>Batal</button>
                <button className="btn btn-primary" onClick={() => {
                  if (!edit.nama_jenis.trim()) { toast({kind:"error",title:"Nama wajib diisi"}); return; }
+                 let nextList;
                  if (edit.id_jenis) {
-                   setList(list.map(x => x.id_jenis === edit.id_jenis ? edit : x));
+                   nextList = list.map(x => x.id_jenis === edit.id_jenis ? edit : x);
                    toast({kind:"success",title:"Jenis tabungan diperbarui",body:edit.nama_jenis});
                  } else {
-                   const id = Math.max(...list.map(x => x.id_jenis)) + 1;
-                   setList([...list, {...edit, id_jenis: id}]);
+                   const id = Math.max(0, ...list.map(x => Number(x.id_jenis) || 0)) + 1;
+                   nextList = [...list, {...edit, id_jenis: id}];
                    toast({kind:"success",title:"Jenis tabungan ditambahkan",body:edit.nama_jenis});
                  }
+                 S.JENIS_IURAN.splice(0, S.JENIS_IURAN.length, ...nextList);
+                 S.persistSTM();
+                 setList(nextList);
                  setEdit(null);
                }}>
                  <Icon name="check" size={14}/> Simpan
@@ -270,6 +274,7 @@ function PrintPreview({ currency }) {
   const S = window.STM;
   const [bulan, setBulan] = React.useState(4);
   const [tahun, setTahun] = React.useState(2026);
+  const [importType, setImportType] = React.useState("families");
   const fmt = (v) => S.formatCurrency(v, currency);
   const toast = useToast();
 
@@ -289,6 +294,35 @@ function PrintPreview({ currency }) {
 
   return (
     <div>
+      <div className="card mb-16">
+        <div className="card-hd">
+          <div>
+            <h3>Backup Data Lokal (CSV)</h3>
+            <div className="muted" style={{fontSize:12}}>Simpan salinan data di komputer. Impor akan menggabungkan data berdasarkan ID, bukan menghapus data lama.</div>
+          </div>
+        </div>
+        <div className="card-pad" style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <button className="btn btn-sec btn-sm" onClick={() => { try { const n = S.exportCSV("families"); toast({kind:"success",title:"CSV keluarga diunduh",body:n + " anggota"}); } catch (err) { toast({kind:"error",title:"Ekspor gagal",body:err.message}); } }}><Icon name="download" size={14}/> Keluarga CSV</button>
+          <button className="btn btn-sec btn-sm" onClick={() => { try { const n = S.exportCSV("transactions"); toast({kind:"success",title:"CSV transaksi diunduh",body:n + " transaksi"}); } catch (err) { toast({kind:"error",title:"Ekspor gagal",body:err.message}); } }}><Icon name="download" size={14}/> Transaksi CSV</button>
+          <button className="btn btn-sec btn-sm" onClick={() => { try { const n = S.exportCSV("savings_types"); toast({kind:"success",title:"CSV jenis tabungan diunduh",body:n + " jenis tabungan"}); } catch (err) { toast({kind:"error",title:"Ekspor gagal",body:err.message}); } }}><Icon name="download" size={14}/> Jenis Tabungan CSV</button>
+          <button className="btn btn-sec btn-sm" onClick={() => { try { const n = S.exportCSV("activity"); toast({kind:"success",title:"CSV aktivitas diunduh",body:n + " catatan aktivitas"}); } catch (err) { toast({kind:"error",title:"Ekspor gagal",body:err.message}); } }}><Icon name="download" size={14}/> Aktivitas CSV</button>
+        </div>
+        <div className="card-pad" style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",borderTop:"1px solid var(--line)"}}>
+          <label htmlFor="stm-csv-type" style={{fontSize:12,fontWeight:600}}>Impor jenis data</label>
+          <select id="stm-csv-type" className="select" style={{width:190}} value={importType} onChange={e => setImportType(e.target.value)}>
+            <option value="families">Keluarga</option><option value="savings_types">Jenis tabungan</option><option value="transactions">Transaksi</option><option value="activity">Aktivitas</option>
+          </select>
+          <label className="btn btn-primary btn-sm" style={{cursor:"pointer"}}><Icon name="upload" size={14}/> Pilih CSV untuk Impor
+            <input type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={async e => {
+              const file = e.target.files && e.target.files[0]; if (!file) return;
+              try { const count = S.importCSV(importType, await file.text()); toast({kind:"success",title:"Impor CSV berhasil",body:count + " baris diproses. Memuat ulang data…"}); window.location.reload(); }
+              catch (err) { toast({kind:"error",title:"Impor CSV gagal",body:err.message || "Format file tidak valid"}); }
+              finally { e.target.value = ""; }
+            }}/>
+          </label>
+          <div className="muted" style={{fontSize:11,flexBasis:"100%"}}>Urutan pemulihan: jenis tabungan → keluarga → transaksi → aktivitas. Impor transaksi membutuhkan ID keluarga dan jenis tabungan yang sudah tersedia.</div>
+        </div>
+      </div>
       <div className="card mb-16">
         <div className="card-hd">
           <div>
