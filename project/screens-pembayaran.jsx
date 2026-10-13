@@ -29,11 +29,14 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const submit = (e) => {
     e.preventDefault();
     if (!form.id_keluarga) { toast({ kind:"error", title:"Pilih anggota terlebih dahulu" }); return; }
-    if (!form.nominal || form.nominal < 1000) { toast({ kind:"error", title:"Nominal tidak valid" }); return; }
+    if (!Number.isFinite(Number(form.nominal)) || Number(form.nominal) < 1000) { toast({ kind:"error", title:"Nominal tidak valid" }); return; }
+    if (!form.tanggal_bayar || Number(form.bulan) < 1 || Number(form.bulan) > 12 || Number(form.tahun) < 2000) { toast({ kind:"error", title:"Tanggal atau periode tidak valid" }); return; }
     const k = S.KELUARGA.find(x => x.id_keluarga === Number(form.id_keluarga));
     const j = S.JENIS_IURAN.find(x => x.id_jenis === Number(form.id_jenis));
+    if (!k || k.status !== "aktif") { toast({ kind:"error", title:"Anggota tidak ditemukan atau non-aktif" }); return; }
+    if (!j) { toast({ kind:"error", title:"Jenis tabungan tidak valid" }); return; }
     const rec = {
-      id_pembayaran: 90000 + saved.length + 1,
+      id_pembayaran: Math.max(0, ...S.PEMBAYARAN.map(p => Number(p.id_pembayaran) || 0)) + 1,
       ...form,
       id_keluarga: Number(form.id_keluarga),
       id_jenis: Number(form.id_jenis),
@@ -55,6 +58,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       tanggal_bayar: rec.tanggal_bayar, metode_pembayaran: rec.metode_pembayaran,
       keterangan: rec.keterangan, dicatat_oleh: rec.dicatat_oleh,
     });
+    S.AKTIVITAS.unshift({ id: Date.now(), waktu: new Date().toISOString().slice(0,16).replace("T"," "), user: rec.dicatat_oleh, aksi: "Mencatat setoran", detail: k.kepala_keluarga + " — " + j.nama_jenis, tipe: "payment" });
+    S.persistSTM();
     toast({
       kind:"success",
       title:`Setoran tercatat`,
