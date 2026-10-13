@@ -284,6 +284,7 @@ button{font-family:inherit}
 
 /* ───────── Print preview ───────── */
 .print-page{background:#fff;width:794px;min-height:1123px;margin:0 auto;padding:54px 60px;box-shadow:0 4px 24px rgba(42,29,18,.12);font-family:var(--font);color:#1a1a1a}
+.pdf-report-header,.pdf-report-footer{display:none}
 .print-hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2px solid #1a1a1a}
 .print-hd h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
 .print-hd h2{margin:2px 0 0;font-size:13px;font-weight:500;color:#555}
@@ -314,7 +315,7 @@ button{font-family:inherit}
 
 
 /* Reliable browser print / Save as PDF for report pages */
-@page { size: A4 landscape; margin: 12mm; }
+@page { size: A4 portrait; margin: 12mm; }
 @media print {
   html, body { background:#fff !important; color:#111 !important; }
   .sidebar, .topbar, .toast-stack, .no-print, button, input, select, .pager { display:none !important; }
@@ -327,6 +328,15 @@ button{font-family:inherit}
   .tbl { width:100% !important; font-size:9pt !important; }
   .tbl th, .tbl td { padding:5px 6px !important; }
   .print-page { width:100% !important; min-height:0 !important; margin:0 !important; padding:0 !important; box-shadow:none !important; }
+  .pdf-report-header { display:block !important; margin:0 0 14px !important; padding:0 0 10px !important; border-bottom:2px solid #222 !important; color:#111 !important; break-after:avoid; }
+  .pdf-report-header h1 { margin:0 0 4px !important; font-size:18pt !important; font-weight:700 !important; }
+  .pdf-report-header div { font-size:11pt !important; margin-bottom:3px !important; }
+  .pdf-report-header small { font-size:9pt !important; color:#555 !important; }
+  .pdf-report-footer { display:block !important; margin-top:16px !important; padding-top:8px !important; border-top:1px solid #bbb !important; font-size:9pt !important; color:#333 !important; }
+  .pdf-report-header, .pdf-report-footer { background:#fff !important; }
+  .chart-wrap, .chart-svg, .rekap-akhir-charts, .rekap-chart-title, .legend, .tooltip { display:none !important; }
+  .sb-mark, .sb-brand, .sb-avatar, .avatar, .stat-ico, .rekap-family-name .avatar { display:none !important; }
+  .app[data-route="rekap-keluarga"] .content .card:not(.family-history-report) { display:none !important; }
   .report-title { break-after:avoid; }
   tr { break-inside:avoid; }
 }
