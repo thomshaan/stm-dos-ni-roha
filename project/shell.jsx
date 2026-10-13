@@ -67,6 +67,7 @@ const NAV = [
   { id: "jenis",       label: "Jenis Tabungan",       icon: "tag" },
   { id: "users",       label: "User & Pengurus",      icon: "user" },
   { id: "aktivitas",   label: "Riwayat Aktivitas",    icon: "history" },
+  { id: "cloud",       label: "Penyimpanan Cloud",    icon: "settings" },
 ];
 
 function Sidebar({ route, setRoute }) {

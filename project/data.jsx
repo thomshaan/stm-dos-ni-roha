@@ -355,11 +355,12 @@ function importCSV(collection, text) {
 
 // Persistent browser storage for this prototype. For shared multi-user use, replace with a server database/API.
 const STORAGE_KEY = "stm-dos-ni-roha-v1";
-function persistSTM() {
+function persistSTM(options = {}) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS }));
-    // Let the active screen refresh its derived totals/lists immediately after any saved change.
+    // Refresh the active screen. Cloud sync listens to this event only after the owner enables it.
     window.dispatchEvent(new Event("stm:data-updated"));
+    if (!options.skipCloud) window.STMCloudSync?.scheduleSave();
   } catch (err) { console.error("Gagal menyimpan data STM", err); }
 }
 function restoreSTM() {

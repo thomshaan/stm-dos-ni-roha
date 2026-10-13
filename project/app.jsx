@@ -1,6 +1,6 @@
 // Root app — routing, tweaks panel, font + theme application.
 const { ToastHost, useTweaks, TweaksPanel, TweakSection, TweakColor, TweakRadio, TweakSelect,
-        Sidebar, Topbar, Icon, Dashboard, Keluarga, InputPembayaran,
+        Sidebar, Topbar, Icon, Dashboard, Keluarga, InputPembayaran, CloudSettings,
         RekapBulanan, RekapTahunan, RekapKeluarga, RekapAkhir, JenisIuran, UsersAdmin, Aktivitas, PrintPreview } = window;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -73,6 +73,7 @@ function App() {
     jenis:     ["Jenis Tabungan", "Konfigurasi kategori setoran"],
     users:     ["User & Pengurus", "Akses sistem admin & bendahara"],
     aktivitas: ["Riwayat Aktivitas", "Audit log aksi pengurus"],
+    cloud: ["Penyimpanan Cloud", "Atur database online pribadi melalui Google Sheets"],
   };
   const [title, crumb] = titles[route] || titles.dashboard;
 
@@ -90,6 +91,7 @@ function App() {
       case "jenis":     return <JenisIuran currency={t.currency}/>;
       case "users":     return <UsersAdmin/>;
       case "aktivitas": return <Aktivitas/>;
+      case "cloud": return <CloudSettings/>;
       default:          return <Dashboard setRoute={setRoute} currency={t.currency}/>;
     }
   };
