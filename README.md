@@ -52,3 +52,8 @@ This project intentionally uses a lightweight, no-server setup for small STM usa
 5. Confirm member counts and transaction totals after import.
 
 If this later needs a single shared database, SQLite is the simplest next step; it would require a small local backend because browser pages cannot safely write directly to a SQL database file.
+
+
+## Google Sheets cloud database (optional)
+
+See [GOOGLE-SHEETS-SETUP.md](GOOGLE-SHEETS-SETUP.md) for the OAuth setup and first sync. The website uses Google OAuth with the limited `drive.file` scope; it does not embed a client secret or expose a public write endpoint. Cloud sync is opt-in and the first load/upload is an explicit choice.
