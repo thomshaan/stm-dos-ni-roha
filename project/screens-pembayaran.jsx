@@ -253,7 +253,7 @@ function RekapBulanan({ currency }) {
               {S.BULAN_ID_FULL.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
             </select>
             <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
-              {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+              {Array.from({length: Math.max(3, new Date().getFullYear() - 2022)}, (_, i) => new Date().getFullYear() - i).reverse().map(y => <option key={y}>{y}</option>)}
             </select>
             <button className="btn btn-sec btn-sm"><Icon name="file_excel" size={14}/> Excel</button>
             <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
