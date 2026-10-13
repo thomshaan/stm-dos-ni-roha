@@ -789,7 +789,7 @@ function RekapAkhir({ currency }) {
   const years = Array.from(new Set([...S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite), new Date().getFullYear()])).sort((a,b)=>a-b);
   const depositsByMonth = S.BULAN_ID.map((_,i) => S.PEMBAYARAN.filter(p=>Number(p.tahun)===Number(chartYear) && Number(p.bulan)===i+1 && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
   const exportAll = () => {
-    const rows = filtered.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.saldoBersih]);
+    const rows = families.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.saldoBersih]);
     S.downloadCSVRows("Rekap-Akhir-Tabungan-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Saldo Bersih"],rows);
   };
   return <div className="grid rekap-akhir-page" style={{gap:16}}>
