@@ -1,26 +1,17 @@
 <!doctype html>
-<html>
-<head><base target="_top"><meta charset="utf-8"></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>STM Dos Ni Roha Sync Bridge</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 42rem; margin: 3rem auto; padding: 0 1.25rem; color: #202124; }
+    h1 { font-size: 1.25rem; }
+  </style>
+</head>
 <body>
-<script>
-(function () {
-  "use strict";
-  const ALLOWED_PARENT_ORIGIN = "https://thomshaan.github.io";
-  window.addEventListener("message", function (event) {
-    if (event.origin !== ALLOWED_PARENT_ORIGIN || event.source !== window.parent) return;
-    const message = event.data || {};
-    if (message.type !== "stm-gas-request" || !message.id || typeof message.action !== "string") return;
-    google.script.run
-      .withSuccessHandler(function (result) {
-        window.parent.postMessage({ type: "stm-gas-response", id: message.id, ok: true, result: result }, ALLOWED_PARENT_ORIGIN);
-      })
-      .withFailureHandler(function (error) {
-        window.parent.postMessage({ type: "stm-gas-response", id: message.id, ok: false, error: error && error.message ? error.message : "Permintaan gagal." }, ALLOWED_PARENT_ORIGIN);
-      })
-      .bridgeRequest(message.action, message.passphrase, message.payload || {});
-  });
-  window.parent.postMessage({ type: "stm-gas-ready" }, ALLOWED_PARENT_ORIGIN);
-})();
-</script>
+  <h1>STM Dos Ni Roha sync endpoint</h1>
+  <p>This endpoint is used by the STM Dos Ni Roha app. Opening this page directly does not run a connection test.</p>
+  <p>Use the app's <strong>Test connection</strong> control to check the configured backend.</p>
 </body>
 </html>

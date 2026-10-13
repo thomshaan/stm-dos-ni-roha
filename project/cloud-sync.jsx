@@ -18,8 +18,8 @@ const { Icon } = window;
   let saveTimer = null;
   let syncing = false;
   let queued = false;
-  let gasFrame = null;
-  let gasFrameReady = null;
+  // JSONP is used for cross-origin reads because Apps Script HTML Service wraps
+  // its content in a Google-owned frame that can reject host-page postMessage calls.
   let gasSaving = false;
   let gasQueued = false;
   let gasDirty = false;
@@ -37,54 +37,74 @@ const { Icon } = window;
     }
     return config;
   }
-  function ensureGasFrame() {
+  function gasJsonp(action, options = {}) {
     const config = gasConfig();
-    if (gasFrame && gasFrame.src === config.gasUrl && gasFrameReady) return gasFrameReady;
-    if (gasFrame) gasFrame.remove();
-    gasFrame = document.createElement("iframe");
-    gasFrame.title = "STM Dos Ni Roha secure sync bridge";
-    gasFrame.setAttribute("aria-hidden", "true");
-    gasFrame.style.cssText = "position:fixed;width:1px;height:1px;left:-10px;bottom:-10px;border:0;opacity:0;pointer-events:none";
-    gasFrameReady = new Promise((resolve, reject) => {
-      const fail = (message) => {
+    return new Promise((resolve, reject) => {
+      const callbackName = "stmJsonp_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
+      const url = new URL(config.gasUrl);
+      let finished = false;
+      const cleanup = () => {
+        if (finished) return;
+        finished = true;
         clearTimeout(timeout);
-        if (gasFrame) gasFrame.remove();
-        gasFrame = null;
-        gasFrameReady = null;
-        reject(new Error(message));
+        script.remove();
+        try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
       };
-      const timeout = setTimeout(() => fail("Apps Script bridge tidak merespons setelah 20 detik. Periksa deployment Web app dan izin akses Anyone."), 20000);
-      gasFrame.addEventListener("load", () => { clearTimeout(timeout); resolve(); }, { once: true });
-      gasFrame.addEventListener("error", () => fail("Gagal memuat Apps Script bridge. Periksa URL deployment dan koneksi internet."), { once: true });
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error("Apps Script tidak merespons melalui JSONP. Periksa deployment Web app dan izin akses Anyone."));
+      }, 25000);
+      window[callbackName] = result => {
+        cleanup();
+        resolve(result);
+      };
+      url.searchParams.set("action", action);
+      url.searchParams.set("passphrase", config.gasPin);
+      url.searchParams.set("callback", callbackName);
+      if (options.requestId) url.searchParams.set("requestId", options.requestId);
+      script.async = true;
+      script.src = url.toString();
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("Gagal memuat respons Apps Script. Periksa URL deployment dan izin akses."));
+      };
+      document.head.appendChild(script);
     });
-    gasFrame.src = config.gasUrl;
-    document.body.appendChild(gasFrame);
-    return gasFrameReady;
   }
-  window.addEventListener("message", event => {
-    if (!gasFrame || event.source !== gasFrame.contentWindow) return;
-    const message = event.data || {};
-    if (message.type !== "stm-gas-response" || !gasPending.has(message.id)) return;
-    const pending = gasPending.get(message.id);
-    gasPending.delete(message.id);
-    clearTimeout(pending.timeout);
-    if (message.ok) pending.resolve(message.result);
-    else pending.reject(new Error(message.error || "Permintaan Apps Script gagal."));
-  });
   async function gasRequest(action, payload = {}) {
     const config = gasConfig();
-    await ensureGasFrame();
-    return new Promise((resolve, reject) => {
-      const id = "gas-" + Date.now() + "-" + Math.random().toString(36).slice(2);
-      const timeout = setTimeout(() => {
-        gasPending.delete(id);
-        reject(new Error("Permintaan sinkronisasi melewati batas waktu. Periksa koneksi internet dan deployment Apps Script."));
-      }, 30000);
-      gasPending.set(id, { resolve, reject, timeout });
-      gasFrame.contentWindow.postMessage({
-        type: "stm-gas-request", id, action, passphrase: config.gasPin, payload
-      }, "*");
-    });
+    if (action !== "replaceAll") {
+      const result = await gasJsonp(action);
+      if (result && result.ok === false) throw new Error(result.error || "Permintaan Apps Script gagal.");
+      return result;
+    }
+
+    // POST can be sent cross-origin in no-cors mode with a simple text/plain
+    // content type. Since its response is opaque, poll the JSONP status endpoint
+    // for the server-side result instead of pretending the write succeeded.
+    const id = "gas_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    try {
+      await fetch(config.gasUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: JSON.stringify({ id, action, passphrase: config.gasPin, payload })
+      });
+    } catch (_) {
+      throw new Error("Gagal mengirim data ke Apps Script. Periksa koneksi dan deployment Web app.");
+    }
+    const deadline = Date.now() + 25000;
+    while (Date.now() < deadline) {
+      const status = await gasJsonp("status", { requestId: id });
+      if (status && status.pending) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        continue;
+      }
+      if (!status || !status.ok) throw new Error((status && status.error) || "Apps Script gagal menyimpan data.");
+      return status;
+    }
+    throw new Error("Waktu tunggu penyimpanan habis. Periksa Apps Script Executions sebelum mencoba lagi.");
   }
   function currentDatasets() {
     const S = window.STM;

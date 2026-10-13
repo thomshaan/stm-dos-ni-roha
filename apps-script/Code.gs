@@ -11,14 +11,73 @@ const TABLES = {
   AKTIVITAS: ["id","waktu","user","aksi","detail","tipe"]
 };
 
-function doGet() {
+function doGet(e) {
+  const params = (e && e.parameter) || {};
+  if (params.action) return jsonpRequest_(params);
   return HtmlService.createHtmlOutputFromFile("Bridge")
     .setTitle("STM Dos Ni Roha Sync Bridge")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /**
- * Called only through google.script.run from Bridge.html.
+ * Cross-origin JSONP endpoint for reads and write-status polling.
+ * JSONP avoids the HTML Service iframe postMessage bridge entirely.
+ */
+function jsonpRequest_(params) {
+  const callback = String(params.callback || "");
+  if (!/^stmJsonp_[A-Za-z0-9_]+$/.test(callback)) {
+    return ContentService.createTextOutput("/* Invalid callback */")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  let result;
+  try {
+    const passphrase = String(params.passphrase || "");
+    if (params.action === "status") {
+      bridgeRequest("ping", passphrase, {});
+      const id = String(params.requestId || "");
+      if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error("ID permintaan tidak valid.");
+      const cached = CacheService.getScriptCache().get("STM_REQ_" + id);
+      result = cached ? JSON.parse(cached) : { ok: false, pending: true };
+    } else {
+      if (params.action === "replaceAll") throw new Error("Operasi tulis harus menggunakan POST.");
+      const payload = params.payload ? JSON.parse(params.payload) : {};
+      result = bridgeRequest(String(params.action || ""), passphrase, payload);
+    }
+  } catch (error) {
+    result = { ok: false, error: error && error.message ? error.message : "Permintaan gagal." };
+  }
+
+  return ContentService.createTextOutput(callback + "(" + JSON.stringify(result) + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+/**
+ * Cross-origin write endpoint. The browser cannot read this response in no-cors
+ * mode, so the result is saved briefly in Script Cache and polled via JSONP.
+ */
+function doPost(e) {
+  let body = {};
+  let result;
+  try {
+    body = JSON.parse(e && e.postData && e.postData.contents || "{}");
+    const id = String(body.id || "");
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error("ID permintaan tidak valid.");
+    result = bridgeRequest(String(body.action || ""), body.passphrase, body.payload || {});
+    CacheService.getScriptCache().put("STM_REQ_" + id, JSON.stringify(result), 300);
+  } catch (error) {
+    result = { ok: false, error: error && error.message ? error.message : "Permintaan gagal." };
+    const id = String(body.id || "");
+    if (/^[A-Za-z0-9_-]{1,100}$/.test(id)) {
+      CacheService.getScriptCache().put("STM_REQ_" + id, JSON.stringify(result), 300);
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({ accepted: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Internal operation handler used by the JSONP GET and POST endpoints.
  * A shared family passphrase is required for every operation.
  */
 function bridgeRequest(action, passphrase, payload) {
