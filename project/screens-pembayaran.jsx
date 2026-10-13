@@ -434,7 +434,6 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
 function RekapBulanan({ currency }) {
   const S = window.STM;
   const [bulan, setBulan] = React.useState(new Date().getMonth()+1);
-  const [tahun, setTahun] = React.useState(new Date().getFullYear());
   const fmt = (v) => S.formatCurrency(v, currency);
   const fmtC = (v) => S.formatCurrencyCompact(v, currency);
 
@@ -707,9 +706,6 @@ function RekapKeluarga({ currency }) {
   const deposits = allPays.filter(p=>Number(p.nominal)>0).reduce((s,p)=>s+Number(p.nominal),0);
   const withdrawals = allPays.filter(p=>Number(p.nominal)<0).reduce((s,p)=>s+Math.abs(Number(p.nominal)),0);
   const net = deposits-withdrawals;
-  const yearPays = allPays.filter(p=>Number(p.tahun)===Number(tahun));
-  const monthlyDeposits = S.BULAN_ID.map((_,i)=>yearPays.filter(p=>Number(p.bulan)===i+1 && Number(p.nominal)>0).reduce((s,p)=>s+Number(p.nominal),0));
-  const monthlyWithdrawals = S.BULAN_ID.map((_,i)=>yearPays.filter(p=>Number(p.bulan)===i+1 && Number(p.nominal)<0).reduce((s,p)=>s+Math.abs(Number(p.nominal)),0));
   const exportLedger = () => {
     if (!selected) return;
     const rows = allPays.map(p=>{const j=S.JENIS_IURAN.find(x=>Number(x.id_jenis)===Number(p.id_jenis));return [p.id_pembayaran,p.tanggal_bayar,p.nominal<0?"Penarikan":"Setoran",j?.nama_jenis||"",S.BULAN_ID_FULL[Number(p.bulan)-1],p.tahun,p.metode_pembayaran,p.nominal,p.keterangan||"",p.dicatat_oleh||""];});
@@ -755,10 +751,6 @@ function RekapKeluarga({ currency }) {
           <div><div className="stat-lbl">Total Penarikan</div><div className="stat-val tab-num" style={{fontSize:21,color:"var(--danger)"}}>{fmt(withdrawals)}</div></div>
           <div><div className="stat-lbl">Jenis Tabungan</div><div className="stat-val tab-num" style={{fontSize:21}}>{new Set(allPays.map(p=>p.id_jenis)).size}</div></div>
         </div>
-      </div>
-      <div className="card">
-        <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Aktivitas Bulanan</h3><div className="muted" style={{fontSize:12}}>Bandingkan uang masuk dan uang yang diambil.</div></div><div className="card-hd-actions no-print"><label style={{fontSize:12,color:"var(--muted)"}}>Tahun <select className="select" style={{width:100,marginLeft:6}} value={tahun} onChange={e=>setTahun(Number(e.target.value))}>{Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
-        <div className="card-pad"><div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Setoran per bulan · {tahun}</div><BarChart data={monthlyDeposits} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)}/><div style={{fontWeight:700,fontSize:12,margin:"20px 0 8px"}}>Penarikan per bulan · {tahun}</div><BarChart data={monthlyWithdrawals} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--danger)" softAccent="var(--danger-soft)"/></div>
       </div>
       <div className="card family-history-report">
         <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Seluruh Riwayat Transaksi</h3><div className="muted" style={{fontSize:12}}>Urut terbaru ke terlama · saldo bersih seluruh periode {fmt(net)}</div></div><span className="badge badge-neutral">{allPays.length} entri</span></div>

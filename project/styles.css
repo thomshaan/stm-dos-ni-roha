@@ -341,6 +341,7 @@ button{font-family:inherit}
   .chart-wrap, .chart-svg, .rekap-akhir-charts, .rekap-chart-title, .legend, .tooltip, .rekap-akhir-chart-card { display:none !important; }
   .sb-mark, .sb-brand, .sb-avatar, .avatar, .stat-ico, .rekap-family-name .avatar { display:none !important; }
   .app[data-route="rekap-keluarga"] .content .card:not(.family-history-report) { display:none !important; }
+  .app[data-route="rekap-akhir"] .rekap-akhir-summary { display:none !important; }
   .report-title { break-after:avoid; }
   tr { break-inside:avoid; }
 }
