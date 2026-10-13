@@ -4,7 +4,7 @@ const { Icon } = window;
   const CONFIG_KEY = "stm-google-sheets-config-v1";
   const READY_KEY = "stm-google-sheets-ready-v1";
   // Shared family backend defaults. These values are public in GitHub Pages source by design.
-  const FAMILY_SYNC_URL = "https://script.google.com/macros/s/AKfycbytd-Gxh676uoODIBCDJfDtpWpk1JcaRfPzfIBJLfkRs6RniYcGRRV8Os8yCPnnE-tbKw/exec";
+  const FAMILY_SYNC_URL = "https://script.google.com/macros/s/AKfycbxlYLNY6Z8JOqAmpeLBbfInrDrMbJL42lWsxAKRxgnUreDIVgpr8bU8srb_0hlpmEfiOg/exec";
   const FAMILY_SYNC_PIN = "1BAGHW37G7XTI";
   const TAB_COLUMNS = {
     KELUARGA: ["id_keluarga","no_anggota","kepala_keluarga","no_hp","status","tanggal_gabung"],
