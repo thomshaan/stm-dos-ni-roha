@@ -807,7 +807,7 @@ function RekapAkhir({ currency }) {
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
-        <div><h3>Rekap Tabungan Semua Keluarga</h3><div className="muted">Total setoran sepanjang riwayat yang tersimpan.</div></div>
+        <div><h3>Rekap Tabungan Semua Keluarga</h3><div className="muted">Total setoran per keluarga; saldo keseluruhan sudah dikurangi total penarikan anonim.</div></div>
         <div className="card-hd-actions rekap-akhir-actions">
           <button className="btn btn-sec btn-sm" onClick={exportAll}><Icon name="file_excel" size={14}/> Ekspor CSV</button>
           <button className="btn btn-dark btn-sm no-print" onClick={()=>window.print()}><Icon name="file_pdf" size={14}/> Ekspor PDF</button>
@@ -825,7 +825,7 @@ function RekapAkhir({ currency }) {
           <td className="tbl-num"><b style={{color:"var(--success)"}}>{fmt(k.tabungan)}</b></td>
           <td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.id_keluarga)===Number(k.id_keluarga)&&Number(p.nominal)>0).length}</td>
         </tr>)}
-      </tbody><tfoot><tr><td colSpan={2}>Total seluruh keluarga</td><td className="tbl-num">{fmt(allDeposits)}</td><td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length}</td></tr></tfoot></table></div>
+      </tbody><tfoot><tr><td colSpan={2}>Saldo bersih (setoran − penarikan)</td><td className="tbl-num">{fmt(netBalance)}</td><td className="tbl-num">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length} setoran</td></tr></tfoot></table></div>
     </div>
     <div className="card rekap-akhir-withdrawals">
       <div className="card-hd">
