@@ -77,7 +77,7 @@ function doPost(e) {
 }
 
 /**
- * Called only through google.script.run from Bridge.html.
+ * Internal operation handler used by the JSONP GET and POST endpoints.
  * A shared family passphrase is required for every operation.
  */
 function bridgeRequest(action, passphrase, payload) {
