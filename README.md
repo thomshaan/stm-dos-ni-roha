@@ -39,7 +39,7 @@ This project intentionally uses a lightweight, no-server setup for small STM usa
 
 - Browser storage is per browser profile/device. It is not automatically shared between computers, and clearing browser data can erase the working copy. Export CSV backups regularly.
 - CSV files are manual backups/imports, not a live database. Keep the four CSV exports together for a complete backup.
-- Existing records in `project/data.jsx` are demo data. Remove or replace them before entering real STM records.
+- A fresh install starts with empty family, transaction, and activity records. The three savings categories and four administrator examples are starter configuration; review them before using the system for real STM finances.
 - This is not yet production-audited. Browser end-to-end tests have not been run. Review imported CSV files and verify totals after restoring.
 - Authentication and user roles are currently prototype UI, not real access control.
 
