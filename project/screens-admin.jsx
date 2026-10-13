@@ -323,7 +323,7 @@ function PrintPreview({ currency }) {
 
   return (
     <div>
-      <div className="card mb-16">
+      <div className="card mb-16 no-print">
         <div className="card-hd">
           <div>
             <h3>Backup Data Lokal (CSV)</h3>
@@ -352,7 +352,7 @@ function PrintPreview({ currency }) {
           <div className="muted" style={{fontSize:11,flexBasis:"100%"}}>Urutan pemulihan: jenis tabungan → keluarga → transaksi → aktivitas. Impor transaksi membutuhkan ID keluarga dan jenis tabungan yang sudah tersedia.</div>
         </div>
       </div>
-      <div className="card mb-16">
+      <div className="card mb-16 no-print">
         <div className="card-hd">
           <div>
             <h3>Cetak & Export</h3>
