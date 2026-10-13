@@ -318,6 +318,10 @@ button{font-family:inherit}
 @page { size: A4 portrait; margin: 12mm; }
 @media print {
   html, body { background:#fff !important; color:#111 !important; }
+  /* Keep sections in the final recap compact on PDF without changing screen spacing. */
+  .rekap-akhir-page { gap:4px !important; row-gap:4px !important; }
+  .rekap-akhir-page > .rekap-akhir-summary { margin-bottom:0 !important; }
+  .rekap-akhir-page > .card { margin:0 !important; }
   .sidebar, .topbar, .toast-stack, .no-print, button, input, select, .pager { display:none !important; }
   .app { display:block !important; min-height:0 !important; }
   .main, .content { display:block !important; padding:0 !important; margin:0 !important; min-height:0 !important; }
