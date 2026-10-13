@@ -8,6 +8,8 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
   const [page, setPage] = React.useState(1);
   const perPage = 10;
   const [detail, setDetail] = React.useState(null);
+  const [showAdd, setShowAdd] = React.useState(false);
+  const [newFamily, setNewFamily] = React.useState({ kepala_keluarga: "", no_hp: "", tanggal_gabung: new Date().toISOString().slice(0,10), status: "aktif" });
   const fmt = (v) => S.formatCurrency(v, currency);
 
   const filtered = React.useMemo(() => {
@@ -41,6 +43,37 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
 
   return (
     <>
+      {showAdd && (
+        <Modal open={showAdd} onClose={() => setShowAdd(false)}>
+          <div className="card-pad" style={{minWidth:320}}>
+            <h3 style={{marginTop:0}}>Tambah Keluarga</h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const nama = newFamily.kepala_keluarga.trim();
+              if (!nama) return;
+              const nextId = Math.max(0, ...S.KELUARGA.map(x => Number(x.id_keluarga) || 0)) + 1;
+              const usedNumbers = new Set(S.KELUARGA.map(x => x.no_anggota));
+              let seq = nextId;
+              let noAnggota = "STM-" + String(seq).padStart(3,"0");
+              while (usedNumbers.has(noAnggota)) { seq++; noAnggota = "STM-" + String(seq).padStart(3,"0"); }
+              const rec = { id_keluarga: nextId, no_anggota: noAnggota, kepala_keluarga: nama, no_hp: newFamily.no_hp.trim(), status: newFamily.status, tanggal_gabung: newFamily.tanggal_gabung };
+              S.KELUARGA.push(rec);
+              S.AKTIVITAS.unshift({ id: Date.now(), waktu: new Date().toISOString().slice(0,16).replace("T"," "), user: "Robert Marpaung", aksi: "Menambah anggota", detail: nama, tipe: "create" });
+              S.persistSTM();
+              setNewFamily({ kepala_keluarga: "", no_hp: "", tanggal_gabung: new Date().toISOString().slice(0,10), status: "aktif" });
+              setShowAdd(false);
+              setPage(1);
+              if (typeof window !== "undefined") window.dispatchEvent(new Event("stm-data-changed"));
+            }} style={{display:"grid",gap:12}}>
+              <div className="field"><label>Nama kepala keluarga *</label><input className="input" required maxLength={120} value={newFamily.kepala_keluarga} onChange={e => setNewFamily(v => ({...v,kepala_keluarga:e.target.value}))}/></div>
+              <div className="field"><label>Nomor HP</label><input className="input" inputMode="tel" maxLength={30} value={newFamily.no_hp} onChange={e => setNewFamily(v => ({...v,no_hp:e.target.value}))}/></div>
+              <div className="field"><label>Tanggal bergabung</label><input className="input" type="date" required value={newFamily.tanggal_gabung} onChange={e => setNewFamily(v => ({...v,tanggal_gabung:e.target.value}))}/></div>
+              <div className="field"><label>Status</label><select className="select" value={newFamily.status} onChange={e => setNewFamily(v => ({...v,status:e.target.value}))}><option value="aktif">Aktif</option><option value="nonaktif">Non-aktif</option></select></div>
+              <div style={{display:"flex",justifyContent:"flex-end",gap:8}}><button type="button" className="btn btn-sec" onClick={() => setShowAdd(false)}>Batal</button><button type="submit" className="btn btn-primary">Simpan Anggota</button></div>
+            </form>
+          </div>
+        </Modal>
+      )}
       <div className="card">
         <div className="card-hd">
           <div>
@@ -54,7 +87,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
               <option value="aktif">Aktif</option>
               <option value="nonaktif">Non-aktif</option>
             </select>
-            <button className="btn btn-primary btn-sm" onClick={() => onAddPayment(null)}>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>
               <Icon name="plus" size={14}/> Anggota Baru
             </button>
           </div>
