@@ -405,8 +405,8 @@ function RekapBulanan({ currency }) {
       <div className="card">
         <div className="card-hd" style={{flexWrap:"wrap"}}>
           <div>
-            <h3>Rekap Setoran {S.BULAN_ID_FULL[bulan-1]} {tahun}</h3>
-            <div className="muted" style={{fontSize:12}}>Akumulasi setoran tabungan untuk periode terpilih</div>
+            <h3>Rekap Transaksi {S.BULAN_ID_FULL[bulan-1]} {tahun}</h3>
+            <div className="muted" style={{fontSize:12}}>Setoran dikurangi penarikan pada periode terpilih</div>
           </div>
           <div className="card-hd-actions" style={{gap:8,flexWrap:"wrap"}}>
             <select className="select" style={{width:130}} value={bulan} onChange={e => setBulan(Number(e.target.value))}>
@@ -422,7 +422,7 @@ function RekapBulanan({ currency }) {
 
         <div className="card-pad" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,borderBottom:"1px solid var(--line)"}}>
           <div>
-            <div className="stat-lbl">Total Masuk</div>
+            <div className="stat-lbl">Saldo Bersih</div>
             <div className="stat-val tab-num" style={{fontSize:22}}>{fmtC(total)}</div>
           </div>
           <div>
@@ -430,7 +430,7 @@ function RekapBulanan({ currency }) {
             <div className="stat-val tab-num" style={{fontSize:22}}>{pays.length}</div>
           </div>
           <div>
-            <div className="stat-lbl">Anggota Setor</div>
+            <div className="stat-lbl">Anggota Bertransaksi</div>
             <div className="stat-val tab-num" style={{fontSize:22}}>{rows.length}</div>
           </div>
           <div>
