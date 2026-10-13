@@ -206,7 +206,8 @@ function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
   for (const j of S.JENIS_IURAN) perJenis[j.id_jenis] = 0;
   for (const p of pays) perJenis[p.id_jenis] += p.nominal;
 
-  const TODAY = { tahun: 2026, bulan: 5 };
+  const now = new Date();
+  const TODAY = { tahun: now.getFullYear(), bulan: now.getMonth() + 1 };
   const months12 = [];
   for (let k = 11; k >= 0; k--) {
     const d = new Date(TODAY.tahun, TODAY.bulan - 1 - k, 1);
