@@ -153,6 +153,22 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
                         setDetail({...before});
                         setDataVersion(v => v + 1);
                       }} title="Edit data keluarga"><Icon name="edit" size={12}/> Edit</button>
+                      <button className="btn btn-ghost btn-sm" title="Hapus keluarga" onClick={(e) => {
+                        e.stopPropagation();
+                        const related = S.PEMBAYARAN.filter(p => p.id_keluarga === k.id_keluarga);
+                        const warning = related.length
+                          ? `Hapus keluarga ${k.kepala_keluarga} beserta ${related.length} transaksi terkait? Tindakan ini tidak dapat dibatalkan.`
+                          : `Hapus keluarga ${k.kepala_keluarga}? Tindakan ini tidak dapat dibatalkan.`;
+                        if (!window.confirm(warning)) return;
+                        const beforeName = k.kepala_keluarga;
+                        S.KELUARGA.splice(0, S.KELUARGA.length, ...S.KELUARGA.filter(x => x.id_keluarga !== k.id_keluarga));
+                        S.PEMBAYARAN.splice(0, S.PEMBAYARAN.length, ...S.PEMBAYARAN.filter(p => p.id_keluarga !== k.id_keluarga));
+                        S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Menghapus keluarga",detail:beforeName+" · "+related.length+" transaksi dihapus",tipe:"warn"});
+                        S.persistSTM();
+                        if (detail?.id_keluarga === k.id_keluarga) setDetail(null);
+                        setPage(1);
+                        setDataVersion(v => v + 1);
+                      }}><Icon name="trash" size={12}/> Hapus</button>
                       <button className="btn btn-sec btn-sm" onClick={(e) => { e.stopPropagation(); onAddPayment(k); }}>
                         <Icon name="plus" size={12}/> Setor
                       </button>

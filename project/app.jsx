@@ -24,6 +24,13 @@ function App() {
   const [route, setRoute] = React.useState("dashboard");
   const [search, setSearch] = React.useState("");
   const [presetKeluarga, setPresetKeluarga] = React.useState(null);
+  const [dataVersion, setDataVersion] = React.useState(0);
+
+  React.useEffect(() => {
+    const refresh = () => setDataVersion(v => v + 1);
+    window.addEventListener("stm:data-updated", refresh);
+    return () => window.removeEventListener("stm:data-updated", refresh);
+  }, []);
 
   // Apply theme via inline style on :root
   React.useEffect(() => {
@@ -113,7 +120,7 @@ function App() {
               </>
             }
           />
-          <main className="content">{renderScreen()}</main>
+          <main className="content">{React.cloneElement(renderScreen(), { key: dataVersion })}</main>
         </div>
       </div>
 

@@ -340,6 +340,8 @@ const STORAGE_KEY = "stm-dos-ni-roha-v1";
 function persistSTM() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS }));
+    // Let the active screen refresh its derived totals/lists immediately after any saved change.
+    window.dispatchEvent(new Event("stm:data-updated"));
   } catch (err) { console.error("Gagal menyimpan data STM", err); }
 }
 function restoreSTM() {

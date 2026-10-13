@@ -114,7 +114,7 @@ function UsersAdmin() {
       <div className="card-hd">
         <div>
           <h3>User & Pengurus</h3>
-          <div className="muted" style={{fontSize:12}}>Akses sistem hanya untuk admin & bendahara</div>
+          <div className="muted" style={{fontSize:12}}>Daftar pengurus lokal (bukan autentikasi/login aktif)</div>
         </div>
         <div className="card-hd-actions">
           <button className="btn btn-primary btn-sm" onClick={() => setEdit({id_user:null,nama:"",username:"",role:"bendahara"})}>
@@ -155,6 +155,19 @@ function UsersAdmin() {
                 <td>
                   <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
                     <button className="btn btn-sec btn-sm" onClick={() => setEdit(u)}><Icon name="edit" size={12}/> Edit</button>
+                    <button className="btn btn-ghost btn-sm" title="Hapus user" onClick={() => {
+                      if (u.role === "admin" && list.filter(x => x.role === "admin").length <= 1) {
+                        toast({kind:"error",title:"Admin terakhir tidak dapat dihapus"});
+                        return;
+                      }
+                      if (!window.confirm(`Hapus user ${u.nama} (@${u.username})? Tindakan ini tidak dapat dibatalkan.`)) return;
+                      const nextList = list.filter(x => x.id_user !== u.id_user);
+                      S.USERS.splice(0, S.USERS.length, ...nextList);
+                      S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Menghapus user",detail:u.nama+" (@"+u.username+")",tipe:"warn"});
+                      S.persistSTM();
+                      setList(nextList);
+                      toast({kind:"success",title:"User dihapus",body:u.nama});
+                    }}><Icon name="trash" size={12}/> Hapus</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => toast({kind:"info",title:"Reset password terkirim",body:`Tautan dikirim ke ${u.nama}`})}>
                       <Icon name="settings" size={12}/>
                     </button>
