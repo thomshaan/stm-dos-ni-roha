@@ -25,25 +25,30 @@ The design medium is **HTML/CSS/JS** — these are prototypes, not production co
 - `project/` — the `STMDosNiRoha` project files (HTML prototypes, assets, components)
 
 
-## Current implementation status
+## Simple local data and CSV backup
 
-The UI is still a static React/Babel prototype served from `project/index.html`. This branch adds browser-local persistence and a PostgreSQL schema, but **does not yet connect the UI to a shared server database**.
+This project intentionally uses a lightweight, no-server setup for small STM usage:
 
-### Changes on `feat/persistent-data-family-management`
+- Day-to-day records are saved in browser `localStorage`, so refreshes in the same browser profile retain data.
+- On the **Cetak / Export** screen, export families, transactions, savings types, and activity logs as separate CSV files.
+- CSV imports merge records by their IDs. Existing records with matching IDs are updated; other records remain.
+- When restoring data, import savings types and families before transactions so transaction foreign references can be validated.
+- The PostgreSQL schema in `database/schema.sql` is optional reference material only. The app does not connect to it.
 
-- New `database/schema.sql`: PostgreSQL tables for families, savings types, users, transactions, and activity logs, plus indexes and a derived family-balance view.
-- `project/data.jsx`: loads/saves the current prototype data in browser `localStorage`.
-- `project/keluarga.jsx`: the “Anggota Baru” action now opens a creation form, assigns a member number, logs the action, and persists the record.
-- `project/screens-pembayaran.jsx`: transactions are persisted, receive an ID based on the current maximum ID, validate amount/date/member/type, reject inactive members, and create an activity entry.
+### Important limitations
 
-### Important limitations before real use
+- Browser storage is per browser profile/device. It is not automatically shared between computers, and clearing browser data can erase the working copy. Export CSV backups regularly.
+- CSV files are manual backups/imports, not a live database. Keep the four CSV exports together for a complete backup.
+- Existing records in `project/data.jsx` are demo data. Remove or replace them before entering real STM records.
+- This is not yet production-audited. Browser end-to-end tests have not been run. Review imported CSV files and verify totals after restoring.
+- Authentication and user roles are currently prototype UI, not real access control.
 
-- Browser `localStorage` is local to one browser profile/device. It is not a shared database, has no multi-user synchronization, and is not suitable as the source of truth for real financial records.
-- `database/schema.sql` is a schema only; the app does not currently connect to PostgreSQL. A backend/API and environment-based database credentials still need to be implemented.
-- Existing records in `project/data.jsx` are synthetic demo data. Do not treat them as real STM records.
-- Authentication/authorization, edit/reversal workflows, server-side validation, backup/restore, and end-to-end browser testing are still required before production use.
-- The interface contains date/period assumptions and other prototype controls that should be audited as the backend is connected.
+### Basic backup workflow
 
-### Recommended next step
+1. Open **Cetak / Export**.
+2. Download **Keluarga CSV**, **Jenis Tabungan CSV**, **Transaksi CSV**, and **Aktivitas CSV**.
+3. Keep the files together in a dated folder.
+4. To restore, import **Jenis Tabungan**, then **Keluarga**, then **Transaksi**, then **Aktivitas**.
+5. Confirm member counts and transaction totals after import.
 
-Implement a small Node.js/Express API backed by PostgreSQL, then replace the `localStorage` adapter with API calls. The API should own IDs, validate transactions, enforce role permissions, and calculate balances from the transaction ledger. Configure secrets through environment variables; never commit database passwords or service-role keys.
+If this later needs a single shared database, SQLite is the simplest next step; it would require a small local backend because browser pages cannot safely write directly to a SQL database file.
