@@ -111,7 +111,7 @@ function Dashboard({ setRoute, currency }) {
         <div className="card">
           <div className="card-hd">
             <div>
-              <h3>Setoran 12 Bulan Terakhir</h3>
+              <h3>Perubahan Saldo 12 Bulan Terakhir</h3>
               <div className="muted" style={{fontSize:12}}>Total setoran per bulan</div>
             </div>
             <div className="card-hd-actions">
@@ -126,7 +126,7 @@ function Dashboard({ setRoute, currency }) {
         <div className="card">
           <div className="card-hd">
             <div>
-              <h3>Setoran per Jenis · Mei</h3>
+              <h3>Perubahan Saldo per Jenis · Mei</h3>
               <div className="muted" style={{fontSize:12}}>Breakdown kategori tabungan</div>
             </div>
           </div>
@@ -202,7 +202,7 @@ function Dashboard({ setRoute, currency }) {
         <div className="card">
           <div className="card-hd">
             <div>
-              <h3>Setoran Terbaru</h3>
+              <h3>Transaksi Terbaru</h3>
               <div className="muted" style={{fontSize:12}}>6 transaksi terakhir</div>
             </div>
             <div className="card-hd-actions">
@@ -220,7 +220,7 @@ function Dashboard({ setRoute, currency }) {
                     <div style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>{k?.kepala_keluarga}</div>
                     <div style={{fontSize:11.5,color:"var(--muted)"}}>{j?.nama_jenis} · {p.tanggal_bayar} · {p.metode_pembayaran}</div>
                   </div>
-                  <div className="tab-num" style={{fontSize:13,fontWeight:700,color:"var(--success)"}}>+{fmt(p.nominal)}</div>
+                  <div className="tab-num" style={{fontSize:13,fontWeight:700,color:p.nominal < 0 ? "var(--danger)" : "var(--success)"}}>{p.nominal < 0 ? "−" : "+"}{fmt(Math.abs(p.nominal))}</div>
                 </div>
               );
             })}
