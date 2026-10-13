@@ -237,7 +237,8 @@ button{font-family:inherit}
 .input:focus,.select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .select{padding-right:32px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%238a7659' d='M0 0h10L5 6z'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
 .input[data-prefix]{padding-left:38px}
-.input-wrap{position:relative}
+.input-wrap{position:relative;min-width:0}
+.input-wrap > .input{padding-left:40px}
 .input-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
 
 /* segmented */
