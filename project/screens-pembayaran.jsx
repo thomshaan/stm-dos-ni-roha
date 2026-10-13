@@ -18,6 +18,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     metode_pembayaran: "Tunai",
     keterangan: "",
   });
+  const [historyLimit, setHistoryLimit] = React.useState(10);
   const [saved, setSaved] = React.useState(() => [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p, _kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan", _jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"})));
 
   React.useEffect(() => {
@@ -181,8 +182,14 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
             <h3>Riwayat Transaksi</h3>
             <div className="muted" style={{fontSize:12}}>Semua transaksi tersimpan di browser ini</div>
           </div>
-          <div className="card-hd-actions">
-            <span className="badge badge-accent tab-num">{saved.length} entri</span>
+          <div className="card-hd-actions" style={{display:"flex",alignItems:"center",gap:10}}>
+            <label htmlFor="transaction-history-limit" className="muted" style={{fontSize:12,whiteSpace:"nowrap"}}>Tampilkan</label>
+            <select id="transaction-history-limit" className="select" value={historyLimit} onChange={e => setHistoryLimit(Number(e.target.value))} style={{width:88,padding:"7px 28px 7px 10px"}}>
+              <option value={10}>10</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="badge badge-accent tab-num">{Math.min(saved.length, historyLimit)} / {saved.length} entri</span>
           </div>
         </div>
         {saved.length === 0 ? (
@@ -193,7 +200,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
           </div>
         ) : (
           <div style={{maxHeight:520,overflowY:"auto"}}>
-            {saved.map(s => (
+            {saved.slice(0, historyLimit).map(s => (
               <div key={s.id_pembayaran} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 18px",borderBottom:"1px solid var(--line-2)"}}>
                 <Avatar name={s._kel_name} size="sm"/>
                 <div style={{flex:1,minWidth:0}}>
