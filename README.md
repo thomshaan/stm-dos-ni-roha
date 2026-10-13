@@ -23,3 +23,27 @@ The design medium is **HTML/CSS/JS** — these are prototypes, not production co
 - `README.md` — this file
 - `chats/` — conversation transcripts (read these!)
 - `project/` — the `STMDosNiRoha` project files (HTML prototypes, assets, components)
+
+
+## Current implementation status
+
+The UI is still a static React/Babel prototype served from `project/index.html`. This branch adds browser-local persistence and a PostgreSQL schema, but **does not yet connect the UI to a shared server database**.
+
+### Changes on `feat/persistent-data-family-management`
+
+- New `database/schema.sql`: PostgreSQL tables for families, savings types, users, transactions, and activity logs, plus indexes and a derived family-balance view.
+- `project/data.jsx`: loads/saves the current prototype data in browser `localStorage`.
+- `project/keluarga.jsx`: the “Anggota Baru” action now opens a creation form, assigns a member number, logs the action, and persists the record.
+- `project/screens-pembayaran.jsx`: transactions are persisted, receive an ID based on the current maximum ID, validate amount/date/member/type, reject inactive members, and create an activity entry.
+
+### Important limitations before real use
+
+- Browser `localStorage` is local to one browser profile/device. It is not a shared database, has no multi-user synchronization, and is not suitable as the source of truth for real financial records.
+- `database/schema.sql` is a schema only; the app does not currently connect to PostgreSQL. A backend/API and environment-based database credentials still need to be implemented.
+- Existing records in `project/data.jsx` are synthetic demo data. Do not treat them as real STM records.
+- Authentication/authorization, edit/reversal workflows, server-side validation, backup/restore, and end-to-end browser testing are still required before production use.
+- The interface contains date/period assumptions and other prototype controls that should be audited as the backend is connected.
+
+### Recommended next step
+
+Implement a small Node.js/Express API backed by PostgreSQL, then replace the `localStorage` adapter with API calls. The API should own IDs, validate transactions, enforce role permissions, and calculate balances from the transaction ledger. Configure secrets through environment variables; never commit database passwords or service-role keys.
