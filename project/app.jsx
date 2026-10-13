@@ -118,8 +118,8 @@ function App() {
                   </span>
                 </button>
                 <button className="btn btn-primary btn-sm"
-                        onClick={() => { setPresetKeluarga(null); setRoute("input"); }}>
-                  <Icon name="plus" size={14}/> Catat Setoran
+                        onClick={() => { setPresetKeluarga(null); setRoute(route === "input-penarikan" ? "input-penarikan" : "input"); }}>
+                  <Icon name={route === "input-penarikan" ? "money" : "plus"} size={14}/> {route === "input-penarikan" ? "Catat Penarikan" : "Catat Setoran"}
                 </button>
               </>
             }
