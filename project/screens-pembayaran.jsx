@@ -178,8 +178,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       <div className="card">
         <div className="card-hd">
           <div>
-            <h3>Tercatat Sesi Ini</h3>
-            <div className="muted" style={{fontSize:12}}>Setoran masuk dari form di sebelah</div>
+            <h3>Riwayat Transaksi</h3>
+            <div className="muted" style={{fontSize:12}}>Semua transaksi tersimpan di browser ini</div>
           </div>
           <div className="card-hd-actions">
             <span className="badge badge-accent tab-num">{saved.length} entri</span>
@@ -188,7 +188,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
         {saved.length === 0 ? (
           <div className="empty-state">
             <Icon name="receipt" size={36}/>
-            <div>Belum ada setoran dicatat sesi ini.</div>
+            <div>Belum ada transaksi tersimpan.</div>
             <div style={{fontSize:12,marginTop:4}}>Form di sebelah kiri akan menambahkan entri di sini.</div>
           </div>
         ) : (
@@ -227,6 +227,18 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
                     setSaved(next);
                     toast({kind:"success",title:"Transaksi diperbarui",body:"Perubahan tersimpan di browser ini."});
                   }}><Icon name="edit" size={12}/> Edit</button>
+                  <button type="button" className="btn btn-ghost btn-sm" title="Hapus transaksi" onClick={() => {
+                    if (!window.confirm(`Hapus transaksi ${S.formatCurrency(s.nominal)} dari ${s._kel_name} pada ${s.tanggal_bayar}? Tindakan ini tidak dapat dibatalkan.`)) return;
+                    const index = S.PEMBAYARAN.findIndex(x => x.id_pembayaran === s.id_pembayaran);
+                    if (index < 0) { toast({kind:"error",title:"Transaksi tidak ditemukan"}); return; }
+                    const [removed] = S.PEMBAYARAN.splice(index, 1);
+                    S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:"Menghapus transaksi",detail:"ID "+removed.id_pembayaran+" · "+S.formatCurrency(removed.nominal),tipe:"warn"});
+                    S.persistSTM();
+                    const next = [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(item => ({...item,_kel_name:S.KELUARGA.find(k => k.id_keluarga === item.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan",_jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === item.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"}));
+                    window.__sessionPayments = next;
+                    setSaved(next);
+                    toast({kind:"success",title:"Transaksi dihapus",body:"Data tersimpan di browser ini."});
+                  }}><Icon name="trash" size={12}/> Hapus</button>
                 </div>
               </div>
             ))}
