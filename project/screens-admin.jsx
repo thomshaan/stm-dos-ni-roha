@@ -301,8 +301,8 @@ function Aktivitas() {
 
 function PrintPreview({ currency }) {
   const S = window.STM;
-  const [bulan, setBulan] = React.useState(4);
-  const [tahun, setTahun] = React.useState(2026);
+  const [bulan, setBulan] = React.useState(new Date().getMonth()+1);
+  const [tahun, setTahun] = React.useState(new Date().getFullYear());
   const [importType, setImportType] = React.useState("families");
   const fmt = (v) => S.formatCurrency(v, currency);
   const toast = useToast();
@@ -363,7 +363,7 @@ function PrintPreview({ currency }) {
               {S.BULAN_ID_FULL.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
             </select>
             <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
-              {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+              {Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}
             </select>
             <button className="btn btn-sec btn-sm" onClick={() => { const rows=pays.slice().sort((a,b)=>String(a.tanggal_bayar).localeCompare(String(b.tanggal_bayar))).map(p=>{const k=S.KELUARGA.find(x=>Number(x.id_keluarga)===Number(p.id_keluarga));const j=S.JENIS_IURAN.find(x=>Number(x.id_jenis)===Number(p.id_jenis));return [p.id_pembayaran,p.tanggal_bayar,k?.no_anggota||"",k?.kepala_keluarga||"",j?.nama_jenis||"",p.nominal<0?"Penarikan":"Setoran",S.BULAN_ID_FULL[p.bulan-1],p.tahun,p.metode_pembayaran,p.nominal,p.keterangan||""];});S.downloadCSVRows("Rekap-"+S.BULAN_ID[bulan-1]+"-"+tahun+".csv",["ID Transaksi","Tanggal","No Anggota","Keluarga","Jenis Tabungan","Jenis Transaksi","Periode Bulan","Tahun","Metode","Nominal Bersih","Keterangan"],rows);toast({kind:"success",title:"CSV laporan diunduh",body:rows.length+" transaksi. File CSV dapat dibuka di Excel."}); }}>
               <Icon name="file_excel" size={14}/> Excel / CSV
@@ -398,7 +398,7 @@ function PrintPreview({ currency }) {
               <div style={{fontSize:15,fontWeight:700,marginTop:2}} className="tab-num">{fmt(total)}</div>
             </div>
             <div style={{padding:"10px 12px",background:"#f6efe1",borderRadius:6}}>
-              <div style={{color:"#777",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600,fontSize:10}}>Transaksi</div>
+              <div style={{color:"#777",textTransform:"uppercase",letterSpacing:".05em",fontWeight:600,fontSize:10}}>Jumlah Transaksi</div>
               <div style={{fontSize:15,fontWeight:700,marginTop:2}} className="tab-num">{pays.length}</div>
             </div>
             <div style={{padding:"10px 12px",background:"#f6efe1",borderRadius:6}}>
