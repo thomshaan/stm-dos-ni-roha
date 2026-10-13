@@ -679,7 +679,7 @@ function RekapKeluarga({ currency }) {
           <button className="btn btn-dark btn-sm" disabled={!selected} onClick={()=>window.print()}><Icon name="file_pdf" size={14}/> PDF / Print</button>
         </div>
       </div>
-      <div className="card-pad" style={{display:"grid",gridTemplateColumns:"minmax(220px,1fr) minmax(260px,1.2fr)",gap:12}}>
+      <div className="card-pad family-picker-grid" style={{display:"grid",gridTemplateColumns:"minmax(220px,1fr) minmax(260px,1.2fr)",gap:12}}>
         <div className="field"><label>Cari keluarga</label><div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Nama kepala keluarga / STM-001"/></div><div className="hint">{matches.length} keluarga cocok</div></div>
         <div className="field"><label>Pilih keluarga</label><select className="select" value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">— Pilih keluarga —</option>{matches.map(k=><option key={k.id_keluarga} value={k.id_keluarga}>{k.no_anggota} · {k.kepala_keluarga}{k.status==="nonaktif"?" (nonaktif)":""}</option>)}</select></div>
       </div>
@@ -687,7 +687,7 @@ function RekapKeluarga({ currency }) {
     {!selected ? <div className="card empty-state"><Icon name="users" size={32}/><div>Pilih keluarga untuk melihat rekapnya.</div><div className="muted" style={{fontSize:12}}>Rekap mencakup saldo bersih, grafik bulanan, dan seluruh transaksi yang pernah dicatat.</div></div> : <>
       <div className="card">
         <div className="card-hd"><Avatar name={selected.kepala_keluarga} size="md"/><div style={{flex:1}}><h3>{selected.kepala_keluarga}</h3><div className="muted" style={{fontSize:12}}>{selected.no_anggota} · {selected.status==="aktif"?"Aktif":"Nonaktif"} · Bergabung {selected.tanggal_gabung||"—"}</div></div><span className="badge badge-accent">{allPays.length} transaksi</span></div>
-        <div className="card-pad" style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:14}}>
+        <div className="card-pad family-summary-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:14}}>
           <div><div className="stat-lbl">Saldo Bersih</div><div className="stat-val tab-num" style={{fontSize:21,color:net<0?"var(--danger)":"var(--ink)"}}>{fmt(net)}</div></div>
           <div><div className="stat-lbl">Total Setoran</div><div className="stat-val tab-num" style={{fontSize:21,color:"var(--success)"}}>{fmt(deposits)}</div></div>
           <div><div className="stat-lbl">Total Penarikan</div><div className="stat-val tab-num" style={{fontSize:21,color:"var(--danger)"}}>{fmt(withdrawals)}</div></div>
@@ -709,4 +709,4 @@ function RekapKeluarga({ currency }) {
   </div>;
 }
 
-Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan, RekapKeluarga });Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan });
+Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan, RekapKeluarga });
