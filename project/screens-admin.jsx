@@ -171,15 +171,25 @@ function UsersAdmin() {
              footer={<>
                <button className="btn btn-ghost" onClick={() => setEdit(null)}>Batal</button>
                <button className="btn btn-primary" onClick={() => {
-                 if (!edit.nama || !edit.username) { toast({kind:"error",title:"Lengkapi data"}); return; }
-                 if (edit.id_user) {
-                   setList(list.map(x => x.id_user === edit.id_user ? edit : x));
-                   toast({kind:"success",title:"User diperbarui",body:edit.nama});
-                 } else {
-                   const id = Math.max(...list.map(x => x.id_user)) + 1;
-                   setList([...list, {...edit,id_user:id,last_login:"—"}]);
-                   toast({kind:"success",title:"User ditambahkan",body:edit.nama});
+                 const nama = edit.nama.trim();
+                 const username = edit.username.trim();
+                 if (!nama || !username) { toast({kind:"error",title:"Lengkapi data"}); return; }
+                 if (list.some(x => x.username.toLowerCase() === username.toLowerCase() && x.id_user !== edit.id_user)) {
+                   toast({kind:"error",title:"Username sudah digunakan"}); return;
                  }
+                 let nextList;
+                 if (edit.id_user) {
+                   nextList = list.map(x => x.id_user === edit.id_user ? {...edit,nama,username} : x);
+                   toast({kind:"success",title:"User diperbarui",body:nama});
+                 } else {
+                   const id = Math.max(0, ...list.map(x => Number(x.id_user) || 0)) + 1;
+                   nextList = [...list, {...edit,nama,username,id_user:id,last_login:"—"}];
+                   toast({kind:"success",title:"User ditambahkan",body:nama});
+                 }
+                 S.USERS.splice(0, S.USERS.length, ...nextList);
+                 S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Admin",aksi:edit.id_user ? "Memperbarui user" : "Menambah user",detail:nama+" (@"+username+")",tipe:edit.id_user ? "update" : "create"});
+                 S.persistSTM();
+                 setList(nextList);
                  setEdit(null);
                }}><Icon name="check" size={14}/> Simpan</button>
              </>}>
