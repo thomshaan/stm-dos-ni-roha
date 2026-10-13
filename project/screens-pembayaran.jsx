@@ -460,6 +460,8 @@ function RekapBulanan({ currency }) {
 
   return (
     <div className="grid" style={{gap:16}}>
+      <div className="pdf-report-header"><h1>Rekap Transaksi Bulanan</h1><div>Periode: {S.BULAN_ID_FULL[bulan-1]} {tahun}</div><small>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</small></div>
+      <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
       <div className="card">
         <div className="card-hd" style={{flexWrap:"wrap"}}>
           <div>
@@ -574,6 +576,8 @@ function RekapTahunan({ currency }) {
 
   return (
     <div className="grid" style={{gap:16}}>
+      <div className="pdf-report-header"><h1>Rekap Tahunan</h1><div>Periode: {tahun}</div><small>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</small></div>
+      <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
       <div className="card">
         <div className="card-hd">
           <div>
@@ -712,6 +716,8 @@ function RekapKeluarga({ currency }) {
     S.downloadCSVRows("Rekap-Keluarga-"+String(selected.no_anggota||selected.id_keluarga).replace(/[^a-z0-9_-]/gi,"-")+".csv",["ID Transaksi","Tanggal","Jenis Transaksi","Jenis Tabungan","Periode Bulan","Tahun","Metode","Nominal Bersih","Keterangan","Dicatat Oleh"],rows);
   };
   return <div className="grid" style={{gap:16}}>
+    <div className="pdf-report-header"><h1>Rekap Keluarga</h1><div>{selected ? selected.kepala_keluarga + " · " + selected.no_anggota : ""}</div><small>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</small></div>
+    <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
     <div className="card no-print">
       <div className="card-hd" style={{flexWrap:"wrap"}}>
         <div><h3>Rekap Keluarga</h3><div className="muted" style={{fontSize:12}}>Cari nama atau nomor anggota untuk melihat saldo dan seluruh riwayat transaksi.</div></div>
@@ -754,7 +760,7 @@ function RekapKeluarga({ currency }) {
         <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Aktivitas Bulanan</h3><div className="muted" style={{fontSize:12}}>Bandingkan uang masuk dan uang yang diambil.</div></div><div className="card-hd-actions no-print"><label style={{fontSize:12,color:"var(--muted)"}}>Tahun <select className="select" style={{width:100,marginLeft:6}} value={tahun} onChange={e=>setTahun(Number(e.target.value))}>{Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
         <div className="card-pad"><div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Setoran per bulan · {tahun}</div><BarChart data={monthlyDeposits} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)}/><div style={{fontWeight:700,fontSize:12,margin:"20px 0 8px"}}>Penarikan per bulan · {tahun}</div><BarChart data={monthlyWithdrawals} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--danger)" softAccent="var(--danger-soft)"/></div>
       </div>
-      <div className="card">
+      <div className="card family-history-report">
         <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Seluruh Riwayat Transaksi</h3><div className="muted" style={{fontSize:12}}>Urut terbaru ke terlama · saldo bersih seluruh periode {fmt(net)}</div></div><span className="badge badge-neutral">{allPays.length} entri</span></div>
         <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Tanggal</th><th>Jenis transaksi</th><th>Periode</th><th>Metode</th><th>Keterangan</th><th style={{textAlign:"right"}}>Nominal</th><th style={{textAlign:"right"}}>Saldo berjalan</th></tr></thead><tbody>
           {allPays.length===0 && <tr><td colSpan={7}><div className="empty-state">Belum ada transaksi untuk keluarga ini.</div></td></tr>}
@@ -786,6 +792,8 @@ function RekapAkhir({ currency }) {
     S.downloadCSVRows("Rekap-Akhir-Tabungan-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Total Tabungan Sepanjang Waktu","Jumlah Transaksi"],rows);
   };
   return <div className="grid rekap-akhir-page" style={{gap:16}}>
+    <div className="pdf-report-header"><h1>Rekap Tabungan Semua Keluarga</h1><div>Seluruh riwayat transaksi</div><small>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</small></div>
+    <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
     <div className="grid grid-2 rekap-akhir-summary">
       <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Tabungan Sepanjang Waktu</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
       <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Keluarga & Transaksi</div><div className="stat-ico"><Icon name="users" size={16}/></div></div><div className="stat-val" style={{fontSize:22}}>{families.length}</div><div className="stat-sub">{S.PEMBAYARAN.filter(p=>Number(p.nominal)>0).length} transaksi setoran tercatat</div></div>
