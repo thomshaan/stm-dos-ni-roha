@@ -336,7 +336,7 @@ function importCSV(collection, text) {
 const STORAGE_KEY = "stm-dos-ni-roha-v1";
 function persistSTM() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ KELUARGA, JENIS_IURAN, PEMBAYARAN, AKTIVITAS }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS }));
   } catch (err) { console.error("Gagal menyimpan data STM", err); }
 }
 function restoreSTM() {
@@ -348,6 +348,7 @@ function restoreSTM() {
       KELUARGA.splice(0, KELUARGA.length, ...data.KELUARGA);
       JENIS_IURAN.splice(0, JENIS_IURAN.length, ...data.JENIS_IURAN);
       PEMBAYARAN.splice(0, PEMBAYARAN.length, ...data.PEMBAYARAN);
+      if (Array.isArray(data.USERS)) USERS.splice(0, USERS.length, ...data.USERS);
       if (Array.isArray(data.AKTIVITAS)) AKTIVITAS.splice(0, AKTIVITAS.length, ...data.AKTIVITAS);
     }
   } catch (err) { console.error("Gagal memuat data STM tersimpan", err); }
