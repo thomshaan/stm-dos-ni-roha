@@ -309,7 +309,10 @@ function importCSV(collection, text) {
       rec[field] = Number(rec[field]);
     }
     if (collection === "families" && !["aktif","nonaktif"].includes(rec.status)) throw new Error("Status keluarga tidak valid pada baris " + (i+2));
-    if (collection === "transactions" && (rec.bulan < 1 || rec.bulan > 12 || rec.nominal < 1000)) throw new Error("Periode atau nominal transaksi tidak valid pada baris " + (i+2));
+    if (collection === "transactions" && (rec.bulan < 1 || rec.bulan > 12 || Math.abs(rec.nominal) < 1000)) throw new Error("Periode atau nominal transaksi tidak valid pada baris " + (i+2));
+    if (collection === "transactions" && !rec.jenis_transaksi) rec.jenis_transaksi = rec.nominal < 0 ? "penarikan" : "setoran";
+    if (collection === "transactions" && !["setoran","penarikan"].includes(rec.jenis_transaksi)) throw new Error("Jenis transaksi tidak valid pada baris " + (i+2));
+    if (collection === "transactions") rec.nominal = rec.jenis_transaksi === "penarikan" ? -Math.abs(rec.nominal) : Math.abs(rec.nominal);
     if (collection === "transactions" && !rec.metode_pembayaran) rec.metode_pembayaran = "Tunai";
     if (collection === "families" && rec.no_hp === undefined) rec.no_hp = "";
     return rec;
