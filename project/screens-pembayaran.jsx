@@ -4,12 +4,15 @@ const { Icon, Avatar, BarChart, useToast, Pager } = window;
 function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const S = window.STM;
   const toast = useToast();
-  const today = "2026-05-18";
+  const today = new Date().toISOString().slice(0,10);
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
   const [form, setForm] = React.useState({
     id_keluarga: presetKeluarga?.id_keluarga || "",
     id_jenis: 1,
-    bulan: 5,
-    tahun: 2026,
+    bulan: currentMonth,
+    tahun: currentYear,
     nominal: 25000,
     tanggal_bayar: today,
     metode_pembayaran: "Tunai",
@@ -30,7 +33,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
     e.preventDefault();
     if (!form.id_keluarga) { toast({ kind:"error", title:"Pilih anggota terlebih dahulu" }); return; }
     if (!Number.isFinite(Number(form.nominal)) || Number(form.nominal) < 1000) { toast({ kind:"error", title:"Nominal tidak valid" }); return; }
-    if (!form.tanggal_bayar || Number(form.bulan) < 1 || Number(form.bulan) > 12 || Number(form.tahun) < 2000) { toast({ kind:"error", title:"Tanggal atau periode tidak valid" }); return; }
+    const paidAt = new Date(String(form.tanggal_bayar) + "T00:00:00");
+    if (!form.tanggal_bayar || Number.isNaN(paidAt.getTime()) || !Number.isInteger(Number(form.bulan)) || Number(form.bulan) < 1 || Number(form.bulan) > 12 || !Number.isInteger(Number(form.tahun)) || Number(form.tahun) < 2000) { toast({ kind:"error", title:"Tanggal atau periode tidak valid" }); return; }
     const k = S.KELUARGA.find(x => x.id_keluarga === Number(form.id_keluarga));
     const j = S.JENIS_IURAN.find(x => x.id_jenis === Number(form.id_jenis));
     if (!k || k.status !== "aktif") { toast({ kind:"error", title:"Anggota tidak ditemukan atau non-aktif" }); return; }
@@ -128,7 +132,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
               <label>Tahun</label>
               <select className="select" value={form.tahun}
                       onChange={e => setForm(f => ({...f, tahun: Number(e.target.value)}))}>
-                {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+                {Array.from({length:5}, (_,i) => currentYear - 2 + i).map(y => <option key={y}>{y}</option>)}
               </select>
             </div>
             <div className="field">
@@ -161,7 +165,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
 
           <div className="flex gap-12" style={{justifyContent:"flex-end",marginTop:6}}>
             <button type="button" className="btn btn-ghost" onClick={() => setForm({
-              id_keluarga: "", id_jenis: 1, bulan: 5, tahun: 2026, nominal: 25000,
+              id_keluarga: "", id_jenis: 1, bulan: currentMonth, tahun: currentYear, nominal: 25000,
               tanggal_bayar: today, metode_pembayaran: "Tunai", keterangan: "",
             })}>Reset</button>
             <button type="submit" className="btn btn-primary">
