@@ -61,6 +61,7 @@ const NAV = [
   { id: "rekap-bulan", label: "Rekap Bulanan",        icon: "receipt" },
   { id: "rekap-tahun", label: "Rekap Tahunan",        icon: "chart" },
   { id: "rekap-keluarga", label: "Rekap Keluarga",      icon: "users" },
+  { id: "rekap-akhir", label: "Rekap Akhir",          icon: "chart" },
   { id: "print",       label: "Cetak / Export",       icon: "print" },
   { section: "Administrasi" },
   { id: "jenis",       label: "Jenis Tabungan",       icon: "tag" },
