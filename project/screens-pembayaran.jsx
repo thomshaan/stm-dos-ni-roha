@@ -734,9 +734,9 @@ function RekapAkhir({ currency }) {
   };
   return <div className="grid rekap-akhir-page" style={{gap:16}}>
     <div className="grid grid-3 rekap-akhir-summary">
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Tabungan Sepanjang Waktu</div><div className="stat-ico green"><Icon name="trending_up" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Pengeluaran</div><div className="stat-ico red"><Icon name="trending_down" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">Akumulasi seluruh penarikan</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih Tercatat</div><div className="stat-ico"><Icon name="wallet" size={16}/></div></div><div className="stat-val" style={{fontSize:22,color:allDeposits-allWithdrawals<0?"var(--danger)":"var(--ink)"}}>{fmt(allDeposits-allWithdrawals)}</div><div className="stat-sub">{families.length} keluarga · {S.PEMBAYARAN.length} transaksi</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Tabungan Sepanjang Waktu</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Pengeluaran</div><div className="stat-ico red"><Icon name="receipt" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">Akumulasi seluruh penarikan</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih Tercatat</div><div className="stat-ico"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{fontSize:22,color:allDeposits-allWithdrawals<0?"var(--danger)":"var(--ink)"}}>{fmt(allDeposits-allWithdrawals)}</div><div className="stat-sub">{families.length} keluarga · {S.PEMBAYARAN.length} transaksi</div></div>
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
