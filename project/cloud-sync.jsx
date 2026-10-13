@@ -46,9 +46,16 @@ const { Icon } = window;
     gasFrame.setAttribute("aria-hidden", "true");
     gasFrame.style.cssText = "position:fixed;width:1px;height:1px;left:-10px;bottom:-10px;border:0;opacity:0;pointer-events:none";
     gasFrameReady = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Apps Script bridge tidak merespons. Periksa URL deployment dan akses Anyone.")), 20000);
+      const fail = (message) => {
+        clearTimeout(timeout);
+        if (gasFrame) gasFrame.remove();
+        gasFrame = null;
+        gasFrameReady = null;
+        reject(new Error(message));
+      };
+      const timeout = setTimeout(() => fail("Apps Script bridge tidak merespons setelah 20 detik. Periksa deployment Web app dan izin akses Anyone."), 20000);
       gasFrame.addEventListener("load", () => { clearTimeout(timeout); resolve(); }, { once: true });
-      gasFrame.addEventListener("error", () => { clearTimeout(timeout); reject(new Error("Gagal memuat Apps Script bridge.")); }, { once: true });
+      gasFrame.addEventListener("error", () => fail("Gagal memuat Apps Script bridge. Periksa URL deployment dan koneksi internet."), { once: true });
     });
     gasFrame.src = config.gasUrl;
     document.body.appendChild(gasFrame);
@@ -84,6 +91,7 @@ const { Icon } = window;
     return { KELUARGA:S.KELUARGA, JENIS_IURAN:S.JENIS_IURAN, PEMBAYARAN:S.PEMBAYARAN, USERS:S.USERS, AKTIVITAS:S.AKTIVITAS };
   }
   async function gasTest() {
+    emit("working", "Menguji koneksi Apps Script…");
     const result = await gasRequest("ping");
     if (!result || !result.ok) throw new Error("Apps Script tidak mengonfirmasi koneksi.");
     emit("connected", "Apps Script terhubung. Kode akses keluarga diterima.");
@@ -455,6 +463,7 @@ function CloudSettings() {
           <button className="btn btn-primary" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasLoadAll(); })}><Icon name="download" size={14}/> Load cloud data</button>
           <button className="btn btn-sec" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ if(!window.confirm("Upload akan mengganti seluruh data pada lima tab Google Sheets dengan data perangkat ini. Pastikan perangkat ini berisi data yang benar dan sudah ada backup. Lanjutkan?")) return; const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasUploadLocal(); })}><Icon name="file_excel" size={14}/> Upload this device</button>
         </div>
+        {error && <div className="badge badge-red" role="alert" style={{marginTop:12,whiteSpace:"normal",lineHeight:1.6}}>{error}</div>}
         <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Peringatan: siapa pun yang memiliki URL deployment dan passphrase dapat membaca/mengubah data. Bagikan passphrase hanya kepada keluarga yang dipercaya. Sinkronisasi otomatis memakai strategi last-write-wins; hindari mengedit dari dua perangkat pada saat yang sama. Ekspor CSV sebagai backup.</div>
         <p style={{fontSize:13,marginTop:10}}><a href="https://github.com/thomshaan/stm-dos-ni-roha/blob/main/APPS-SCRIPT-FAMILY-SYNC.md" target="_blank" rel="noreferrer">Buka panduan setup Apps Script ↗</a></p>
       </div>
