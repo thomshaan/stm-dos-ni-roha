@@ -189,21 +189,27 @@ function Modal({ open, onClose, title, subtitle, children, footer, width }) {
 function BarChart({ data, labels, height = 220, formatY, accent = "var(--accent)", softAccent = "var(--accent-soft)" }) {
   const W = 720, H = height;
   const padL = 50, padR = 12, padT = 14, padB = 28;
-  const max = Math.max(1, ...data);
-  const niceMax = Math.ceil(max / 5e5) * 5e5;
+  const step = 5e5;
+  const rawMax = Math.max(0, ...data);
+  const rawMin = Math.min(0, ...data);
+  const niceMax = Math.max(step, Math.ceil(rawMax / step) * step);
+  const niceMin = Math.floor(rawMin / step) * step;
+  const domain = Math.max(step, niceMax - niceMin);
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
-  const bw = innerW / data.length * 0.62;
-  const gap = (innerW / data.length) * 0.38;
+  const bw = innerW / Math.max(1,data.length) * 0.62;
+  const gap = (innerW / Math.max(1,data.length)) * 0.38;
   const [hover, setHover] = React.useState(null);
   const yticks = 4;
+  const yFor = v => padT + ((niceMax - v) / domain) * innerH;
+  const zeroY = yFor(0);
   return (
     <div style={{position:"relative"}}>
       <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         {/* Y axis */}
         {Array.from({length: yticks + 1}).map((_,i) => {
-          const v = (niceMax / yticks) * i;
-          const y = padT + innerH - (v / niceMax) * innerH;
+          const v = niceMin + (domain / yticks) * i;
+          const y = yFor(v);
           return (
             <g key={i}>
               <line className="chart-grid" x1={padL} x2={W-padR} y1={y} y2={y}/>
@@ -215,8 +221,8 @@ function BarChart({ data, labels, height = 220, formatY, accent = "var(--accent)
         })}
         {data.map((v,i) => {
           const x = padL + (innerW / data.length) * i + gap / 2;
-          const h = niceMax === 0 ? 0 : (v / niceMax) * innerH;
-          const y = padT + innerH - h;
+          const h = Math.abs(v / domain) * innerH;
+          const y = v >= 0 ? zeroY - h : zeroY;
           const hi = hover === i;
           return (
             <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
@@ -231,7 +237,7 @@ function BarChart({ data, labels, height = 220, formatY, accent = "var(--accent)
       {hover !== null && (
         <div className="tooltip"
              style={{left: `calc(${(padL + (innerW / data.length) * hover + gap/2 + bw/2) / W * 100}% - 50px)`,
-                     top: `${(padT + innerH - (data[hover] / niceMax) * innerH) / H * 100}%`,
+                     top: `${yFor(data[hover]) / H * 100}%`,
                      transform:"translateY(-130%)"}}>
           <b>{labels[hover]}</b> · {formatY ? formatY(data[hover]) : data[hover]}
         </div>
