@@ -1,7 +1,7 @@
 // Root app — routing, tweaks panel, font + theme application.
 const { ToastHost, useTweaks, TweaksPanel, TweakSection, TweakColor, TweakRadio, TweakSelect,
         Sidebar, Topbar, Icon, Dashboard, Keluarga, InputPembayaran,
-        RekapBulanan, RekapTahunan, RekapKeluarga, JenisIuran, UsersAdmin, Aktivitas, PrintPreview } = window;
+        RekapBulanan, RekapTahunan, RekapKeluarga, RekapAkhir, JenisIuran, UsersAdmin, Aktivitas, PrintPreview } = window;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "palette": ["#b8694a", "#7a8c4d", "#4a6f8a"],
@@ -66,6 +66,7 @@ function App() {
     input:     ["Input Setoran", "Catat setoran tabungan anggota"],
     "input-penarikan": ["Input Penarikan", "Catat pengambilan saldo tabungan anggota"],
     "rekap-keluarga": ["Rekap Keluarga", "Periksa saldo, grafik, dan seluruh riwayat transaksi per keluarga"],
+    "rekap-akhir": ["Rekap Akhir", "Ringkasan sepanjang waktu untuk seluruh keluarga"],
     "rekap-bulan": ["Rekap Bulanan", "Setoran agregat per bulan"],
     "rekap-tahun": ["Rekap Tahunan", "Perbandingan tahunan & multi-tahun"],
     print:     ["Cetak / Export", "Pratinjau laporan A4 & ekspor file"],
@@ -82,6 +83,7 @@ function App() {
       case "input":     return <InputPembayaran presetKeluarga={presetKeluarga} currency={t.currency} initialDirection="setoran"/>;
       case "input-penarikan": return <InputPembayaran presetKeluarga={presetKeluarga} currency={t.currency} initialDirection="penarikan"/>;
       case "rekap-keluarga": return <RekapKeluarga currency={t.currency}/>;
+      case "rekap-akhir": return <RekapAkhir currency={t.currency}/>;
       case "rekap-bulan": return <RekapBulanan currency={t.currency}/>;
       case "rekap-tahun": return <RekapTahunan currency={t.currency}/>;
       case "print":     return <PrintPreview currency={t.currency}/>;
