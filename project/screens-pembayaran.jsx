@@ -1,7 +1,7 @@
 // Input setoran (functional form), Rekap bulanan, Rekap tahunan (savings-only)
 const { Icon, Avatar, BarChart, useToast, Pager } = window;
 
-function InputPembayaran({ presetKeluarga, currency, onSaved }) {
+function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection = "setoran" }) {
   const S = window.STM;
   const toast = useToast();
   const today = new Date().toISOString().slice(0,10);
@@ -11,7 +11,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const [form, setForm] = React.useState({
     id_keluarga: presetKeluarga?.id_keluarga || "",
     id_jenis: 1,
-    jenis_transaksi: "setoran",
+    jenis_transaksi: initialDirection,
     bulan: currentMonth,
     tahun: currentYear,
     nominal: 25000,
@@ -23,7 +23,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const [entryMode, setEntryMode] = React.useState("single");
   const [bulkFamilies, setBulkFamilies] = React.useState([]);
   const [bulkType, setBulkType] = React.useState(1);
-  const [bulkDirection, setBulkDirection] = React.useState("setoran");
+  const [bulkDirection, setBulkDirection] = React.useState(initialDirection);
   const [bulkDate, setBulkDate] = React.useState(today);
   const [bulkMonth, setBulkMonth] = React.useState(currentMonth);
   const [bulkYear, setBulkYear] = React.useState(currentYear);
@@ -33,6 +33,11 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
   const [bulkSelectAll, setBulkSelectAll] = React.useState(false);
   const [bulkSearch, setBulkSearch] = React.useState("");
   const [saved, setSaved] = React.useState(() => [...S.PEMBAYARAN].sort((a,b) => b.id_pembayaran - a.id_pembayaran).map(p => ({...p, _kel_name:S.KELUARGA.find(k => k.id_keluarga === p.id_keluarga)?.kepala_keluarga || "Keluarga tidak ditemukan", _jenis_name:S.JENIS_IURAN.find(j => j.id_jenis === p.id_jenis)?.nama_jenis || "Jenis tidak ditemukan"})));
+
+  React.useEffect(() => {
+    setForm(f => ({ ...f, jenis_transaksi: initialDirection }));
+    setBulkDirection(initialDirection);
+  }, [initialDirection]);
 
   React.useEffect(() => {
     if (presetKeluarga) setForm(f => ({ ...f, id_keluarga: presetKeluarga.id_keluarga }));
@@ -89,7 +94,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
       title: rec.jenis_transaksi === "penarikan" ? "Penarikan tercatat" : "Setoran tercatat",
       body:`${k?.kepala_keluarga} — ${j?.nama_jenis} ${S.BULAN_ID_FULL[rec.bulan-1]} ${rec.tahun} · ${S.formatCurrency(Math.abs(rec.nominal), currency)}`,
     });
-    setForm(f => ({ ...f, nominal: S.JENIS_IURAN.find(x => x.id_jenis === f.id_jenis)?.nominal_default || 25000, keterangan: "", id_keluarga: "" }));
+    setForm(f => ({ ...f, jenis_transaksi: initialDirection, nominal: S.JENIS_IURAN.find(x => x.id_jenis === f.id_jenis)?.nominal_default || 25000, keterangan: "", id_keluarga: "" }));
     onSaved && onSaved(rec);
   };
 
@@ -294,7 +299,7 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
 
           <div className="flex gap-12" style={{justifyContent:"flex-end",marginTop:6}}>
             <button type="button" className="btn btn-ghost" onClick={() => setForm({
-              id_keluarga: "", id_jenis: 1, jenis_transaksi: "setoran", bulan: currentMonth, tahun: currentYear, nominal: 25000,
+              id_keluarga: "", id_jenis: 1, jenis_transaksi: initialDirection, bulan: currentMonth, tahun: currentYear, nominal: 25000,
               tanggal_bayar: today, metode_pembayaran: "Tunai", keterangan: "",
             })}>Reset</button>
             <button type="submit" className="btn btn-primary">
@@ -389,8 +394,8 @@ function InputPembayaran({ presetKeluarga, currency, onSaved }) {
 // ── Rekap Bulanan ─────────────────────────────────────────────────────────
 function RekapBulanan({ currency }) {
   const S = window.STM;
-  const [bulan, setBulan] = React.useState(5);
-  const [tahun, setTahun] = React.useState(2026);
+  const [bulan, setBulan] = React.useState(new Date().getMonth()+1);
+  const [tahun, setTahun] = React.useState(new Date().getFullYear());
   const fmt = (v) => S.formatCurrency(v, currency);
   const fmtC = (v) => S.formatCurrencyCompact(v, currency);
 
@@ -419,7 +424,7 @@ function RekapBulanan({ currency }) {
       <div className="card">
         <div className="card-hd" style={{flexWrap:"wrap"}}>
           <div>
-            <h3>Rekap Transaksi {S.BULAN_ID_FULL[bulan-1]} {tahun}</h3>
+            <h3 className="report-title">Rekap Transaksi {S.BULAN_ID_FULL[bulan-1]} {tahun}</h3>
             <div className="muted" style={{fontSize:12}}>Setoran dikurangi penarikan pada periode terpilih</div>
           </div>
           <div className="card-hd-actions" style={{gap:8,flexWrap:"wrap"}}>
@@ -429,8 +434,8 @@ function RekapBulanan({ currency }) {
             <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
               {Array.from({length: Math.max(3, new Date().getFullYear() - 2022)}, (_, i) => new Date().getFullYear() - i).reverse().map(y => <option key={y}>{y}</option>)}
             </select>
-            <button className="btn btn-sec btn-sm"><Icon name="file_excel" size={14}/> Excel</button>
-            <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
+            <button className="btn btn-sec btn-sm" onClick={() => { const rows = pays.slice().sort((a,b)=>String(a.tanggal_bayar).localeCompare(String(b.tanggal_bayar))).map(p=>{const k=S.KELUARGA.find(x=>Number(x.id_keluarga)===Number(p.id_keluarga));const j=S.JENIS_IURAN.find(x=>Number(x.id_jenis)===Number(p.id_jenis));return [p.id_pembayaran,p.tanggal_bayar,k?.no_anggota||"",k?.kepala_keluarga||"",j?.nama_jenis||"",p.nominal<0?"Penarikan":"Setoran",S.BULAN_ID_FULL[p.bulan-1],p.tahun,p.metode_pembayaran,p.nominal,p.keterangan||""];});S.downloadCSVRows("Rekap-Bulanan-"+S.BULAN_ID[bulan-1]+"-"+tahun+".csv",["ID Transaksi","Tanggal","No Anggota","Keluarga","Jenis Tabungan","Jenis Transaksi","Periode Bulan","Tahun","Metode","Nominal Bersih","Keterangan"],rows); }}><Icon name="file_excel" size={14}/> Excel / CSV</button>
+            <button className="btn btn-dark btn-sm" onClick={() => window.print()}><Icon name="file_pdf" size={14}/> PDF / Print</button>
           </div>
         </div>
 
@@ -461,14 +466,14 @@ function RekapBulanan({ currency }) {
                 <th>Kepala Keluarga</th>
                 {S.JENIS_IURAN.map(j => <th key={j.id_jenis} style={{textAlign:"right"}}>{j.nama_jenis}</th>)}
                 <th style={{textAlign:"right"}}>Transaksi</th>
-                <th style={{textAlign:"right"}}>Total Setor</th>
+                <th style={{textAlign:"right"}}>Saldo Bersih</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
                 <tr><td colSpan={4 + S.JENIS_IURAN.length}><div className="empty-state">
                   <Icon name="receipt" size={28}/>
-                  <div>Belum ada setoran pada periode ini.</div>
+                  <div>Belum ada transaksi pada periode ini.</div>
                 </div></td></tr>
               )}
               {rows.map((r,i) => (
@@ -513,7 +518,7 @@ function RekapBulanan({ currency }) {
 // ── Rekap Tahunan ─────────────────────────────────────────────────────────
 function RekapTahunan({ currency }) {
   const S = window.STM;
-  const [tahun, setTahun] = React.useState(2026);
+  const [tahun, setTahun] = React.useState(new Date().getFullYear());
   const fmt = (v) => S.formatCurrency(v, currency);
   const fmtC = (v) => S.formatCurrencyCompact(v, currency);
 
@@ -525,7 +530,7 @@ function RekapTahunan({ currency }) {
   // running balance untuk line chart
   const running = (() => {
     let acc = 0;
-    return perBulan.map(v => { if (v > 0) acc += v; return acc; });
+    return perBulan.map(v => { acc += v; return acc; });
   })();
 
   return (
@@ -533,15 +538,15 @@ function RekapTahunan({ currency }) {
       <div className="card">
         <div className="card-hd">
           <div>
-            <h3>Rekap Tahunan {tahun}</h3>
-            <div className="muted" style={{fontSize:12}}>Komparasi setoran bulanan & breakdown jenis tabungan</div>
+            <h3 className="report-title">Rekap Tahunan {tahun}</h3>
+            <div className="muted" style={{fontSize:12}}>Perubahan saldo bersih bulanan & breakdown jenis tabungan</div>
           </div>
           <div className="card-hd-actions">
             <select className="select" style={{width:100}} value={tahun} onChange={e => setTahun(Number(e.target.value))}>
-              {[2024,2025,2026].map(y => <option key={y}>{y}</option>)}
+              {Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}
             </select>
-            <button className="btn btn-sec btn-sm"><Icon name="file_excel" size={14}/> Excel</button>
-            <button className="btn btn-dark btn-sm"><Icon name="file_pdf" size={14}/> PDF</button>
+            <button className="btn btn-sec btn-sm" onClick={() => { const rows = S.PEMBAYARAN.filter(p=>Number(p.tahun)===Number(tahun)).slice().sort((a,b)=>String(a.tanggal_bayar).localeCompare(String(b.tanggal_bayar))).map(p=>{const k=S.KELUARGA.find(x=>Number(x.id_keluarga)===Number(p.id_keluarga));const j=S.JENIS_IURAN.find(x=>Number(x.id_jenis)===Number(p.id_jenis));return [p.id_pembayaran,p.tanggal_bayar,k?.no_anggota||"",k?.kepala_keluarga||"",j?.nama_jenis||"",p.nominal<0?"Penarikan":"Setoran",S.BULAN_ID_FULL[p.bulan-1],p.tahun,p.metode_pembayaran,p.nominal,p.keterangan||""];});S.downloadCSVRows("Rekap-Tahunan-"+tahun+".csv",["ID Transaksi","Tanggal","No Anggota","Keluarga","Jenis Tabungan","Jenis Transaksi","Periode Bulan","Tahun","Metode","Nominal Bersih","Keterangan"],rows); }}><Icon name="file_excel" size={14}/> Excel / CSV</button>
+            <button className="btn btn-dark btn-sm" onClick={() => window.print()}><Icon name="file_pdf" size={14}/> PDF / Print</button>
           </div>
         </div>
 
@@ -568,7 +573,7 @@ function RekapTahunan({ currency }) {
         </div>
 
         <div className="chart-wrap">
-          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Setoran per Bulan</div>
+          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Perubahan Saldo Bersih per Bulan</div>
           <BarChart data={perBulan} labels={S.BULAN_ID} height={240} formatY={fmtC}/>
         </div>
 
@@ -620,7 +625,7 @@ function RekapTahunan({ currency }) {
         <div className="card-hd">
           <div>
             <h3>Perbandingan Multi-Tahun</h3>
-            <div className="muted" style={{fontSize:12}}>Total setoran per tahun</div>
+            <div className="muted" style={{fontSize:12}}>Saldo bersih per tahun</div>
           </div>
         </div>
         <div className="card-pad">
@@ -643,4 +648,65 @@ function RekapTahunan({ currency }) {
   );
 }
 
-Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan });
+
+function RekapKeluarga({ currency }) {
+  const S = window.STM;
+  const [query, setQuery] = React.useState("");
+  const [selectedId, setSelectedId] = React.useState("");
+  const [tahun, setTahun] = React.useState(new Date().getFullYear());
+  const fmt = v => S.formatCurrency(v, currency);
+  const families = S.KELUARGA.slice().sort((a,b)=>String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga),"id"));
+  const matches = families.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(query.toLowerCase()));
+  const selected = families.find(k => String(k.id_keluarga) === String(selectedId)) || null;
+  const allPays = selected ? S.PEMBAYARAN.filter(p=>Number(p.id_keluarga)===Number(selected.id_keluarga)).slice().sort((a,b)=>String(b.tanggal_bayar).localeCompare(String(a.tanggal_bayar)) || Number(b.id_pembayaran)-Number(a.id_pembayaran)) : [];
+  const deposits = allPays.filter(p=>Number(p.nominal)>0).reduce((s,p)=>s+Number(p.nominal),0);
+  const withdrawals = allPays.filter(p=>Number(p.nominal)<0).reduce((s,p)=>s+Math.abs(Number(p.nominal)),0);
+  const net = deposits-withdrawals;
+  const yearPays = allPays.filter(p=>Number(p.tahun)===Number(tahun));
+  const monthlyDeposits = S.BULAN_ID.map((_,i)=>yearPays.filter(p=>Number(p.bulan)===i+1 && Number(p.nominal)>0).reduce((s,p)=>s+Number(p.nominal),0));
+  const monthlyWithdrawals = S.BULAN_ID.map((_,i)=>yearPays.filter(p=>Number(p.bulan)===i+1 && Number(p.nominal)<0).reduce((s,p)=>s+Math.abs(Number(p.nominal)),0));
+  const exportLedger = () => {
+    if (!selected) return;
+    const rows = allPays.map(p=>{const j=S.JENIS_IURAN.find(x=>Number(x.id_jenis)===Number(p.id_jenis));return [p.id_pembayaran,p.tanggal_bayar,p.nominal<0?"Penarikan":"Setoran",j?.nama_jenis||"",S.BULAN_ID_FULL[Number(p.bulan)-1],p.tahun,p.metode_pembayaran,p.nominal,p.keterangan||"",p.dicatat_oleh||""];});
+    S.downloadCSVRows("Rekap-Keluarga-"+String(selected.no_anggota||selected.id_keluarga).replace(/[^a-z0-9_-]/gi,"-")+".csv",["ID Transaksi","Tanggal","Jenis Transaksi","Jenis Tabungan","Periode Bulan","Tahun","Metode","Nominal Bersih","Keterangan","Dicatat Oleh"],rows);
+  };
+  return <div className="grid" style={{gap:16}}>
+    <div className="card no-print">
+      <div className="card-hd" style={{flexWrap:"wrap"}}>
+        <div><h3>Rekap Keluarga</h3><div className="muted" style={{fontSize:12}}>Cari nama atau nomor anggota untuk melihat saldo dan seluruh riwayat transaksi.</div></div>
+        <div className="card-hd-actions" style={{flexWrap:"wrap"}}>
+          <button className="btn btn-sec btn-sm" disabled={!selected} onClick={exportLedger}><Icon name="file_excel" size={14}/> Excel / CSV</button>
+          <button className="btn btn-dark btn-sm" disabled={!selected} onClick={()=>window.print()}><Icon name="file_pdf" size={14}/> PDF / Print</button>
+        </div>
+      </div>
+      <div className="card-pad family-picker-grid" style={{display:"grid",gridTemplateColumns:"minmax(220px,1fr) minmax(260px,1.2fr)",gap:12}}>
+        <div className="field"><label>Cari keluarga</label><div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>{setQuery(e.target.value);setSelectedId("");}} placeholder="Nama kepala keluarga / STM-001"/></div><div className="hint">{matches.length} keluarga cocok</div></div>
+        <div className="field"><label>Pilih keluarga</label><select className="select" value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">— Pilih keluarga —</option>{matches.map(k=><option key={k.id_keluarga} value={k.id_keluarga}>{k.no_anggota} · {k.kepala_keluarga}{k.status==="nonaktif"?" (nonaktif)":""}</option>)}</select></div>
+      </div>
+    </div>
+    {!selected ? <div className="card empty-state"><Icon name="users" size={32}/><div>Pilih keluarga untuk melihat rekapnya.</div><div className="muted" style={{fontSize:12}}>Rekap mencakup saldo bersih, grafik bulanan, dan seluruh transaksi yang pernah dicatat.</div></div> : <>
+      <div className="card">
+        <div className="card-hd"><Avatar name={selected.kepala_keluarga} size="md"/><div style={{flex:1}}><h3>{selected.kepala_keluarga}</h3><div className="muted" style={{fontSize:12}}>{selected.no_anggota} · {selected.status==="aktif"?"Aktif":"Nonaktif"} · Bergabung {selected.tanggal_gabung||"—"}</div></div><span className="badge badge-accent">{allPays.length} transaksi</span></div>
+        <div className="card-pad family-summary-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:14}}>
+          <div><div className="stat-lbl">Saldo Bersih</div><div className="stat-val tab-num" style={{fontSize:21,color:net<0?"var(--danger)":"var(--ink)"}}>{fmt(net)}</div></div>
+          <div><div className="stat-lbl">Total Setoran</div><div className="stat-val tab-num" style={{fontSize:21,color:"var(--success)"}}>{fmt(deposits)}</div></div>
+          <div><div className="stat-lbl">Total Penarikan</div><div className="stat-val tab-num" style={{fontSize:21,color:"var(--danger)"}}>{fmt(withdrawals)}</div></div>
+          <div><div className="stat-lbl">Jenis Tabungan</div><div className="stat-val tab-num" style={{fontSize:21}}>{new Set(allPays.map(p=>p.id_jenis)).size}</div></div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Aktivitas Bulanan</h3><div className="muted" style={{fontSize:12}}>Bandingkan uang masuk dan uang yang diambil.</div></div><div className="card-hd-actions no-print"><label style={{fontSize:12,color:"var(--muted)"}}>Tahun <select className="select" style={{width:100,marginLeft:6}} value={tahun} onChange={e=>setTahun(Number(e.target.value))}>{Array.from({length:Math.max(5,new Date().getFullYear()-2022)},(_,i)=>new Date().getFullYear()-2+i).reverse().map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
+        <div className="card-pad"><div style={{fontWeight:700,fontSize:12,marginBottom:8}}>Setoran per bulan · {tahun}</div><BarChart data={monthlyDeposits} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)}/><div style={{fontWeight:700,fontSize:12,margin:"20px 0 8px"}}>Penarikan per bulan · {tahun}</div><BarChart data={monthlyWithdrawals} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--danger)" softAccent="var(--danger-soft)"/></div>
+      </div>
+      <div className="card">
+        <div className="card-hd" style={{flexWrap:"wrap"}}><div><h3>Seluruh Riwayat Transaksi</h3><div className="muted" style={{fontSize:12}}>Urut terbaru ke terlama · saldo bersih seluruh periode {fmt(net)}</div></div><span className="badge badge-neutral">{allPays.length} entri</span></div>
+        <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Tanggal</th><th>Jenis transaksi</th><th>Periode</th><th>Metode</th><th>Keterangan</th><th style={{textAlign:"right"}}>Nominal</th><th style={{textAlign:"right"}}>Saldo berjalan</th></tr></thead><tbody>
+          {allPays.length===0 && <tr><td colSpan={7}><div className="empty-state">Belum ada transaksi untuk keluarga ini.</div></td></tr>}
+          {allPays.map((p)=>{const j=S.JENIS_IURAN.find(x=>Number(x.id_jenis)===Number(p.id_jenis));const running=allPays.filter(x=>String(x.tanggal_bayar)<String(p.tanggal_bayar)||(String(x.tanggal_bayar)===String(p.tanggal_bayar)&&Number(x.id_pembayaran)<=Number(p.id_pembayaran))).reduce((sum,x)=>sum+Number(x.nominal),0);return <tr key={p.id_pembayaran}><td className="tab-num">{p.tanggal_bayar}</td><td>{p.nominal<0?"Penarikan":"Setoran"} · {j?.nama_jenis||"Jenis dihapus"}</td><td>{S.BULAN_ID_FULL[Number(p.bulan)-1]} {p.tahun}</td><td>{p.metode_pembayaran||"—"}</td><td>{p.keterangan||"—"}</td><td className="tbl-num"><b style={{color:p.nominal<0?"var(--danger)":"var(--success)"}}>{p.nominal<0?"−":"+"}{fmt(Math.abs(Number(p.nominal)))}</b></td><td className="tbl-num">{fmt(running)}</td></tr>})}
+        </tbody><tfoot><tr><td colSpan={5}>Saldo bersih</td><td className="tbl-num"><b>{fmt(net)}</b></td><td></td></tr></tfoot></table></div>
+      </div>
+    </>}
+  </div>;
+}
+
+Object.assign(window, { InputPembayaran, RekapBulanan, RekapTahunan, RekapKeluarga });

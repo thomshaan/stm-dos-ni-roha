@@ -233,6 +233,21 @@ function pemasukanPerTahun() {
     .sort((a,b) => a.tahun - b.tahun);
 }
 
+function downloadCSVRows(filename, headers, rows) {
+  const csvEscapeCell = (value) => {
+    const v = value == null ? "" : String(value);
+    return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  };
+  const csv = [headers, ...rows].map(row => row.map(csvEscapeCell).join(",")).join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename.endsWith(".csv") ? filename : filename + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return rows.length;
+}
+
 // CSV backup helpers: one CSV file per collection, no server or external database required.
 const CSV_COLLECTIONS = {
   families: { key: "KELUARGA", filename: "stm-keluarga.csv" },
@@ -367,7 +382,7 @@ Object.assign(window, {
   STM: {
     KELUARGA, JENIS_IURAN, PEMBAYARAN, USERS, AKTIVITAS,
     METODE, BULAN_ID, BULAN_ID_FULL,
-    formatCurrency, formatCurrencyCompact,
+    formatCurrency, formatCurrencyCompact, downloadCSVRows,
     avatarColor, initials,
     pembayaranByKeluarga, totalKeluarga, pembayaranBulan,
     pemasukanBulanan, pemasukanPerJenis, pemasukanPerTahun, persistSTM, exportCSV, importCSV,
