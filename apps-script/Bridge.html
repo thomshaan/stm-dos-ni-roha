@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head><base target="_top"><meta charset="utf-8"></head>
+<body>
+<script>
+(function () {
+  "use strict";
+  const ALLOWED_PARENT_ORIGIN = "https://thomshaan.github.io";
+  window.addEventListener("message", function (event) {
+    if (event.origin !== ALLOWED_PARENT_ORIGIN || event.source !== window.parent) return;
+    const message = event.data || {};
+    if (message.type !== "stm-gas-request" || !message.id || typeof message.action !== "string") return;
+    google.script.run
+      .withSuccessHandler(function (result) {
+        window.parent.postMessage({ type: "stm-gas-response", id: message.id, ok: true, result: result }, ALLOWED_PARENT_ORIGIN);
+      })
+      .withFailureHandler(function (error) {
+        window.parent.postMessage({ type: "stm-gas-response", id: message.id, ok: false, error: error && error.message ? error.message : "Permintaan gagal." }, ALLOWED_PARENT_ORIGIN);
+      })
+      .bridgeRequest(message.action, message.passphrase, message.payload || {});
+  });
+  window.parent.postMessage({ type: "stm-gas-ready" }, ALLOWED_PARENT_ORIGIN);
+})();
+</script>
+</body>
+</html>
