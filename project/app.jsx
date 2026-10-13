@@ -1,6 +1,6 @@
 // Root app — routing, tweaks panel, font + theme application.
 const { ToastHost, useTweaks, TweaksPanel, TweakSection, TweakColor, TweakRadio, TweakSelect,
-        Sidebar, Topbar, Icon, Dashboard, Keluarga, InputPembayaran,
+        Sidebar, Topbar, Icon, Dashboard, Keluarga, InputPembayaran, CloudSyncControl,
         RekapBulanan, RekapTahunan, RekapKeluarga, RekapAkhir, JenisIuran, UsersAdmin, Aktivitas, PrintPreview } = window;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -114,6 +114,7 @@ function App() {
             onSearch={sidebarShowSearch ? setSearch : null}
             rightSlot={
               <>
+                <CloudSyncControl />
                 <button className="tb-icon-btn" onClick={cyclePalette} aria-label="Ganti tema" title="Ganti tema warna">
                   <span style={{display:"inline-flex",gap:2}}>
                     {t.palette.slice(0,3).map((c,i) => <span key={i} style={{width:8,height:14,borderRadius:2,background:c}}/>)}
