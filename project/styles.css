@@ -51,7 +51,11 @@ button{font-family:inherit}
 .app[data-sidebar="collapsed"]{--sidebar-w:72px}
 .app[data-sidebar="iconOnly"]{--sidebar-w:72px}
 
-.sidebar{background:var(--sidebar);color:var(--sidebar-fg);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(240,227,198,.35) transparent}
+.sidebar{background:var(--sidebar);color:var(--sidebar-fg);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;min-height:0;overflow:hidden;overscroll-behavior:contain}
+.sb-nav{display:flex;flex-direction:column;gap:6px;flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(240,227,198,.45) transparent;padding:0 0 6px}
+.sb-nav::-webkit-scrollbar{width:6px}
+.sb-nav::-webkit-scrollbar-thumb{background:rgba(240,227,198,.3);border-radius:99px}
+.sb-nav::-webkit-scrollbar-thumb:hover{background:rgba(240,227,198,.55)}
 .sb-brand{display:flex;align-items:center;gap:12px;padding:6px 8px 18px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:10px}
 .sb-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#d88a6c);display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
 .sb-name{font-weight:700;font-size:13.5px;letter-spacing:.01em;white-space:nowrap}
@@ -338,7 +342,7 @@ button{font-family:inherit}
 
 
 /* Rekap Akhir + responsive shell improvements */
-.rekap-akhir-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rekap-akhir-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
 .rekap-akhir-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
 .rekap-chart-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;margin-bottom:10px}
 .rekap-akhir-toolbar{flex-wrap:wrap}
@@ -356,8 +360,9 @@ button{font-family:inherit}
 }
 @media (max-width: 760px) {
   .app{display:flex;flex-direction:column}
-  .sidebar{position:static;height:auto;min-height:0;flex-direction:row;align-items:center;gap:6px;padding:8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+  .sidebar{position:static;height:auto;min-height:0;flex-direction:row;align-items:center;gap:6px;padding:8px;overflow:hidden}
   .sb-brand,.sb-section,.sb-foot{display:none !important}
+  .sb-nav{display:flex;flex:1 1 auto;flex-direction:row;align-items:center;gap:6px;min-width:0;min-height:0;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;scrollbar-width:thin}
   .sb-item{flex:0 0 auto;padding:9px 11px;font-size:12px}
   .sb-item[data-active="1"]::before{left:0;top:auto;right:0;bottom:0;width:auto;height:2px}
   .main{width:100%;min-width:0}
