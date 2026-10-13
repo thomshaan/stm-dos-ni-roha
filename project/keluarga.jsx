@@ -257,10 +257,10 @@ function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
           ))}
         </div>
         <div>
-          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Setoran 12 Bulan Terakhir</div>
+          <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600,marginBottom:6}}>Perubahan Saldo 12 Bulan Terakhir</div>
           <BarChart data={bars} labels={labels} height={160} formatY={(v) => S.formatCurrencyCompact(v, currency)}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:14,marginBottom:6}}>
-            <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600}}>Riwayat Setoran</div>
+            <div style={{fontSize:11,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600}}>Riwayat Transaksi</div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span className="muted" style={{fontSize:11}}>{Math.min(pays.length, historyLimit)} / {pays.length}</span>
               <select aria-label="Jumlah riwayat setoran" className="select" style={{width:76,padding:"5px 22px 5px 8px",fontSize:12}} value={historyLimit} onChange={e => setHistoryLimit(Number(e.target.value))}>
@@ -285,10 +285,10 @@ function KeluargaDetailModal({ keluarga, onClose, currency, onAddPayment }) {
                   return (
                     <tr key={p.id_pembayaran}>
                       <td className="tab-num">{p.tanggal_bayar}</td>
-                      <td>{j?.nama_jenis}</td>
+                      <td>{p.nominal < 0 ? "Penarikan · " : "Setoran · "}{j?.nama_jenis}</td>
                       <td className="tab-num">{S.BULAN_ID[p.bulan-1]} {p.tahun}</td>
                       <td><span className="badge badge-neutral" style={{fontSize:10.5}}>{p.metode_pembayaran}</span></td>
-                      <td className="tbl-num"><b>{fmt(p.nominal)}</b></td>
+                      <td className="tbl-num"><b style={{color:p.nominal < 0 ? "var(--danger)" : "var(--success)"}}>{p.nominal < 0 ? "−" : "+"}{fmt(Math.abs(p.nominal))}</b></td>
                     </tr>
                   );
                 })}
