@@ -186,12 +186,12 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
           <div className="grid grid-4">
             <div className="field"><label>Jenis Transaksi</label><select className="select" value={bulkDirection} onChange={e=>setBulkDirection(e.target.value)}><option value="setoran">Setoran (uang masuk)</option><option value="penarikan">Penarikan (ambil uang kembali)</option></select></div>
             <div className="field"><label>Jenis Tabungan</label><select className="select" value={bulkType} onChange={e => {const id=Number(e.target.value);const def=Number(S.JENIS_IURAN.find(j=>j.id_jenis===id)?.nominal_default||0);setBulkType(id);setBulkAmounts(prev=>Object.fromEntries(Object.entries(prev).map(([k,v])=>[k,v===Number(S.JENIS_IURAN.find(j=>j.id_jenis===Number(bulkType))?.nominal_default||0)?def:v])));}}>{S.JENIS_IURAN.map(j=><option key={j.id_jenis} value={j.id_jenis}>{j.nama_jenis}</option>)}</select></div>
-            <div className="field"><label>{bulkDirection === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label><input className="input" type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)} required /></div>
+            <div className="field"><label>{bulkDirection === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label><input className="input" type="date" value={bulkDate} onChange={e=>{const date=e.target.value;setBulkDate(date);const parts=date.split("-");if(parts.length===3){setBulkYear(Number(parts[0]));setBulkMonth(Number(parts[1]));}}} required /></div>
             <div className="field"><label>{bulkDirection === "penarikan" ? "Metode Penarikan" : "Metode Setor"}</label><select className="select" value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}>{S.METODE.map(m=><option key={m} value={m}>{m}</option>)}</select></div>
           </div>
           <div className="grid grid-3">
-            <div className="field"><label>Bulan Periode</label><select className="select" value={bulkMonth} onChange={e=>setBulkMonth(Number(e.target.value))}>{S.BULAN_ID_FULL.map((b,i)=><option key={i} value={i+1}>{b}</option>)}</select></div>
-            <div className="field"><label>Tahun</label><select className="select" value={bulkYear} onChange={e=>setBulkYear(Number(e.target.value))}>{Array.from({length:5},(_,i)=>currentYear-2+i).map(y=><option key={y} value={y}>{y}</option>)}</select></div>
+            <div className="field"><label>Bulan Periode (otomatis)</label><input className="input" value={S.BULAN_ID_FULL[bulkMonth-1] || ""} readOnly /></div>
+            <div className="field"><label>Tahun (otomatis)</label><input className="input" value={bulkYear} readOnly /></div>
             <div className="field"><label>Keterangan <span className="muted" style={{fontWeight:400}}>(opsional, untuk semua)</span></label><input className="input" value={bulkNote} onChange={e=>setBulkNote(e.target.value)} placeholder={bulkDirection === "penarikan" ? "cth. pengambilan sebagian saldo" : "cth. setoran melalui koordinator"}/></div>
           </div>
           <div className="field">
@@ -205,11 +205,11 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
             <div style={{maxHeight:260,overflowY:"auto",border:"1px solid var(--line)",borderRadius:10}}>
               {activeFamilies.filter(k=>(k.kepala_keluarga+" "+k.no_anggota).toLowerCase().includes(bulkSearch.toLowerCase())).map(k=><div key={k.id_keluarga} style={{display:"grid",gridTemplateColumns:"minmax(180px,1fr) 150px",alignItems:"center",gap:12,padding:"9px 12px",borderBottom:"1px solid var(--line-2)"}}>
                 <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}><input type="checkbox" checked={bulkFamilies.includes(k.id_keluarga)} onChange={()=>toggleBulkFamily(k.id_keluarga)}/><span><b>{k.kepala_keluarga}</b><span className="muted" style={{display:"block",fontSize:11}}>{k.no_anggota}</span></span></label>
-                <div className="input-wrap"><span className="input-prefix">Rp</span><input className="input" aria-label={"Nominal "+k.kepala_keluarga} type="number" min="1000" step="500" value={bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount} onChange={e=>setBulkAmounts(prev=>({...prev,[k.id_keluarga]:Number(e.target.value)||0}))}/></div>
+                <div className="input-wrap"><span className="input-prefix">Rp</span><input className="input" data-prefix="1" aria-label={"Nominal ribuan rupiah "+k.kepala_keluarga} type="number" min="1" step="1" value={Number(bulkAmounts[k.id_keluarga] ?? bulkDefaultAmount)/1000} onChange={e=>setBulkAmounts(prev=>({...prev,[k.id_keluarga]:(Number(e.target.value)||0)*1000}))}/></div>
               </div>)}
               {activeFamilies.filter(k=>(k.kepala_keluarga+" "+k.no_anggota).toLowerCase().includes(bulkSearch.toLowerCase())).length===0 && <div className="empty-state">Tidak ada keluarga yang cocok.</div>}
             </div>
-            <div className="hint">Nominal setiap keluarga bisa diubah satu per satu. Jenis, tanggal, periode, metode, dan keterangan berlaku untuk semua transaksi yang dipilih.</div>
+            <div className="hint">Nominal diisi dalam ribuan rupiah: 25 berarti Rp25.000. Setiap keluarga bisa memiliki nominal berbeda; tanggal otomatis menentukan bulan dan tahun periode.</div>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
             <b>Total {bulkDirection === "penarikan" ? "penarikan" : "setoran"} · {bulkFamilies.length} transaksi · {fmt(bulkFamilies.reduce((sum,id)=>sum+Number(bulkAmounts[id] ?? bulkDefaultAmount),0))}</b>
@@ -301,23 +301,17 @@ function InputPembayaran({ presetKeluarga, currency, onSaved, initialDirection =
 
           <div className="grid grid-3">
             <div className="field">
-              <label>Bulan Periode</label>
-              <select className="select" value={form.bulan}
-                      onChange={e => setForm(f => ({...f, bulan: Number(e.target.value)}))}>
-                {S.BULAN_ID_FULL.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
-              </select>
+              <label>Bulan Periode (otomatis)</label>
+              <input className="input" value={S.BULAN_ID_FULL[Number(form.bulan)-1] || ""} readOnly />
             </div>
             <div className="field">
-              <label>Tahun</label>
-              <select className="select" value={form.tahun}
-                      onChange={e => setForm(f => ({...f, tahun: Number(e.target.value)}))}>
-                {Array.from({length:5}, (_,i) => currentYear - 2 + i).map(y => <option key={y}>{y}</option>)}
-              </select>
+              <label>Tahun (otomatis)</label>
+              <input className="input" value={form.tahun} readOnly />
             </div>
             <div className="field">
               <label>{form.jenis_transaksi === "penarikan" ? "Tanggal Penarikan" : "Tanggal Setor"}</label>
               <input className="input" type="date" value={form.tanggal_bayar}
-                     onChange={e => setForm(f => ({...f, tanggal_bayar: e.target.value}))}/>
+                     onChange={e => {const date=e.target.value;const parts=date.split("-");setForm(f => ({...f, tanggal_bayar:date, ...(parts.length===3 ? {tahun:Number(parts[0]),bulan:Number(parts[1])} : {})}));}}/>
             </div>
           </div>
 
@@ -698,11 +692,13 @@ function RekapKeluarga({ currency }) {
   const S = window.STM;
   const [query, setQuery] = React.useState("");
   const [selectedId, setSelectedId] = React.useState("");
+  const [familyDropdownOpen, setFamilyDropdownOpen] = React.useState(false);
   const [tahun, setTahun] = React.useState(new Date().getFullYear());
   const fmt = v => S.formatCurrency(v, currency);
   const families = S.KELUARGA.slice().sort((a,b)=>String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga),"id"));
   const matches = families.filter(k => (String(k.kepala_keluarga)+" "+String(k.no_anggota)).toLowerCase().includes(query.toLowerCase()));
   const selected = families.find(k => String(k.id_keluarga) === String(selectedId)) || null;
+  const chooseFamily = (k) => { setSelectedId(String(k.id_keluarga)); setQuery(k.kepala_keluarga); setFamilyDropdownOpen(false); };
   const allPays = selected ? S.PEMBAYARAN.filter(p=>Number(p.id_keluarga)===Number(selected.id_keluarga)).slice().sort((a,b)=>String(b.tanggal_bayar).localeCompare(String(a.tanggal_bayar)) || Number(b.id_pembayaran)-Number(a.id_pembayaran)) : [];
   const deposits = allPays.filter(p=>Number(p.nominal)>0).reduce((s,p)=>s+Number(p.nominal),0);
   const withdrawals = allPays.filter(p=>Number(p.nominal)<0).reduce((s,p)=>s+Math.abs(Number(p.nominal)),0);
@@ -724,9 +720,24 @@ function RekapKeluarga({ currency }) {
           <button className="btn btn-dark btn-sm" disabled={!selected} onClick={()=>window.print()}><Icon name="file_pdf" size={14}/> PDF / Print</button>
         </div>
       </div>
-      <div className="card-pad family-picker-grid" style={{display:"grid",gridTemplateColumns:"minmax(220px,1fr) minmax(260px,1.2fr)",gap:12}}>
-        <div className="field"><label>Cari keluarga</label><div className="input-wrap"><span className="input-prefix"><Icon name="search" size={14}/></span><input className="input" value={query} onChange={e=>{setQuery(e.target.value);setSelectedId("");}} placeholder="Nama kepala keluarga / STM-001"/></div><div className="hint">{matches.length} keluarga cocok</div></div>
-        <div className="field"><label>Pilih keluarga</label><select className="select" value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">— Pilih keluarga —</option>{matches.map(k=><option key={k.id_keluarga} value={k.id_keluarga}>{k.no_anggota} · {k.kepala_keluarga}{k.status==="nonaktif"?" (nonaktif)":""}</option>)}</select></div>
+      <div className="card-pad family-picker-grid" style={{display:"grid",gridTemplateColumns:"minmax(220px,1fr)",gap:12}}>
+        <div className="field family-autocomplete"><label>Cari keluarga</label><div className="input-wrap">
+          <span className="input-prefix"><Icon name="search" size={14}/></span>
+          <input className="input" data-prefix="1" role="combobox" aria-autocomplete="list" aria-expanded={familyDropdownOpen} value={query}
+            onFocus={()=>setFamilyDropdownOpen(true)}
+            onChange={e=>{setQuery(e.target.value);setSelectedId("");setFamilyDropdownOpen(true);}}
+            onKeyDown={e=>{if(e.key==="Enter"&&familyDropdownOpen&&matches.length){e.preventDefault();chooseFamily(matches[0]);}if(e.key==="Escape")setFamilyDropdownOpen(false);}}
+            onBlur={()=>setTimeout(()=>setFamilyDropdownOpen(false),120)}
+            placeholder="Ketik nama kepala keluarga atau nomor anggota…" autoComplete="off"/>
+          {familyDropdownOpen && <div className="family-suggestions" role="listbox">
+            {matches.slice(0,10).map(k=><button type="button" role="option" aria-selected={String(selectedId)===String(k.id_keluarga)} key={k.id_keluarga} className={"family-suggestion"+(String(selectedId)===String(k.id_keluarga)?" is-selected":"")} onMouseDown={e=>e.preventDefault()} onClick={()=>chooseFamily(k)}>
+              <span><b>{k.kepala_keluarga}</b><small>{k.no_anggota}{k.status==="nonaktif"?" · Nonaktif":""}</small></span>{String(selectedId)===String(k.id_keluarga)&&<Icon name="check" size={15}/>}
+            </button>)}
+            {matches.length===0&&<div className="family-suggestion-empty">Tidak ada keluarga yang cocok.</div>}
+          </div>}
+        </div><div className="hint">{matches.length} keluarga cocok · pilih satu hasil untuk membuka rekap.</div>
+        {selected && <div className="family-selected-chip"><Icon name="check" size={13}/><span>Keluarga dipilih: <b>{selected.kepala_keluarga}</b> · {selected.no_anggota}</span><button type="button" onClick={()=>{setSelectedId("");setQuery("");setFamilyDropdownOpen(true);}}>Ganti</button></div>}
+        </div>
       </div>
     </div>
     {!selected ? <div className="card empty-state"><Icon name="users" size={32}/><div>Pilih keluarga untuk melihat rekapnya.</div><div className="muted" style={{fontSize:12}}>Rekap mencakup saldo bersih, grafik bulanan, dan seluruh transaksi yang pernah dicatat.</div></div> : <>
@@ -759,6 +770,7 @@ function RekapKeluarga({ currency }) {
 function RekapAkhir({ currency }) {
   const S = window.STM;
   const [query, setQuery] = React.useState("");
+  const [chartYear, setChartYear] = React.useState(new Date().getFullYear());
   const fmt = v => S.formatCurrency(v, currency);
   const families = S.KELUARGA.map(k => {
     const transactions = S.PEMBAYARAN.filter(p => Number(p.id_keluarga) === Number(k.id_keluarga));
@@ -767,9 +779,8 @@ function RekapAkhir({ currency }) {
   }).sort((a,b) => String(a.kepala_keluarga).localeCompare(String(b.kepala_keluarga), "id"));
   const filtered = families.filter(k => (String(k.kepala_keluarga) + " " + String(k.no_anggota)).toLowerCase().includes(query.trim().toLowerCase()));
   const allDeposits = S.PEMBAYARAN.reduce((sum,p) => sum + Math.max(0, Number(p.nominal) || 0), 0);
-  const years = Array.from(new Set(S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite))).sort((a,b)=>a-b);
-  const chartYears = years.length ? years : [new Date().getFullYear()];
-  const depositsByYear = chartYears.map(y => S.PEMBAYARAN.filter(p=>Number(p.tahun)===y && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
+  const years = Array.from(new Set([...S.PEMBAYARAN.map(p => Number(p.tahun)).filter(Number.isFinite), new Date().getFullYear()])).sort((a,b)=>a-b);
+  const depositsByMonth = S.BULAN_ID.map((_,i) => S.PEMBAYARAN.filter(p=>Number(p.tahun)===Number(chartYear) && Number(p.bulan)===i+1 && Number(p.nominal)>0).reduce((sum,p)=>sum+Number(p.nominal),0));
   const exportAll = () => {
     const rows = families.map(k => [k.no_anggota,k.kepala_keluarga,k.status,k.tabungan,k.transaksi]);
     S.downloadCSVRows("Rekap-Akhir-Tabungan-Seluruh-Keluarga.csv",["No Anggota","Kepala Keluarga","Status","Total Tabungan Sepanjang Waktu","Jumlah Transaksi"],rows);
@@ -781,10 +792,11 @@ function RekapAkhir({ currency }) {
     </div>
     <div className="card">
       <div className="card-hd rekap-akhir-toolbar">
-        <div><h3>Grafik Tabungan Tahunan</h3><div className="muted">Akumulasi setoran dari seluruh transaksi yang tercatat, semua tahun.</div></div>
+        <div><h3>Grafik Tabungan Bulanan</h3><div className="muted">Total setoran per bulan pada tahun yang dipilih.</div></div>
+        <div className="card-hd-actions no-print"><label style={{fontSize:12,color:"var(--muted)"}}>Tahun <select className="select" style={{width:100,marginLeft:6}} value={chartYear} onChange={e=>setChartYear(Number(e.target.value))}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label></div>
       </div>
       <div className="card-pad rekap-akhir-charts rekap-akhir-savings-only">
-        <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--success)"}}/> Total tabungan per tahun</div><BarChart data={depositsByYear} labels={chartYears.map(String)} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--success)" softAccent="var(--success-soft)"/></section>
+        <section><div className="rekap-chart-title"><span className="legend-sw" style={{background:"var(--success)"}}/> Total setoran per bulan · {chartYear}</div><BarChart data={depositsByMonth} labels={S.BULAN_ID} height={220} formatY={v=>S.formatCurrencyCompact(v,currency)} accent="var(--success)" softAccent="var(--success-soft)"/></section>
       </div>
     </div>
     <div className="card">
@@ -792,6 +804,7 @@ function RekapAkhir({ currency }) {
         <div><h3>Rekap Tabungan Semua Keluarga</h3><div className="muted">Total setoran sepanjang riwayat yang tersimpan.</div></div>
         <div className="card-hd-actions rekap-akhir-actions">
           <button className="btn btn-sec btn-sm" onClick={exportAll}><Icon name="file_excel" size={14}/> Ekspor CSV</button>
+          <button className="btn btn-dark btn-sm no-print" onClick={()=>window.print()}><Icon name="file_pdf" size={14}/> Ekspor PDF</button>
         </div>
       </div>
       <div className="card-pad rekap-akhir-filter">

@@ -8,8 +8,8 @@ function JenisIuran({ currency }) {
   const [edit, setEdit] = React.useState(null);
   const fmt = (v) => S.formatCurrency(v, currency);
 
-  const usage = (id) => S.PEMBAYARAN.filter(p => p.id_jenis === id).length;
-  const total = (id) => S.PEMBAYARAN.filter(p => p.id_jenis === id).reduce((s,p) => s+p.nominal, 0);
+  const usage = (id) => S.PEMBAYARAN.filter(p => Number(p.id_jenis) === Number(id)).length;
+  const total = (id) => S.PEMBAYARAN.filter(p => Number(p.id_jenis) === Number(id)).reduce((s,p) => s+p.nominal, 0);
 
   return (
     <div className="card">
@@ -50,8 +50,19 @@ function JenisIuran({ currency }) {
                 <td className="tbl-num">{usage(j.id_jenis)}</td>
                 <td className="tbl-num"><b>{fmt(total(j.id_jenis))}</b></td>
                 <td>
-                  <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
+                  <div style={{display:"flex",gap:6,justifyContent:"flex-end",flexWrap:"wrap"}}>
                     <button className="btn btn-sec btn-sm" onClick={() => setEdit(j)}><Icon name="edit" size={12}/> Edit</button>
+                    <button className="btn btn-ghost btn-sm" title="Hapus jenis tabungan" onClick={() => {
+                      const used = usage(j.id_jenis);
+                      if (list.length <= 1) { toast({kind:"error",title:"Jenis terakhir tidak dapat dihapus",body:"Sistem harus memiliki minimal satu jenis tabungan."}); return; }
+                      if (used > 0) { toast({kind:"error",title:"Jenis masih digunakan",body:`${j.nama_jenis} dipakai oleh ${used} transaksi. Data historis dipertahankan; hapus atau pindahkan transaksi terkait terlebih dahulu.`}); return; }
+                      if (!window.confirm(`Hapus jenis tabungan “${j.nama_jenis}”? Tindakan ini tidak dapat dibatalkan.`)) return;
+                      const nextList = list.filter(x => Number(x.id_jenis) !== Number(j.id_jenis));
+                      S.JENIS_IURAN.splice(0, S.JENIS_IURAN.length, ...nextList);
+                      S.AKTIVITAS.unshift({id:Date.now(),waktu:new Date().toISOString().slice(0,16).replace("T"," "),user:"Thomas",aksi:"Menghapus jenis tabungan",detail:j.nama_jenis,tipe:"warn"});
+                      S.persistSTM(); setList(nextList);
+                      toast({kind:"success",title:"Jenis tabungan dihapus",body:j.nama_jenis});
+                    }}><Icon name="trash" size={12}/> Hapus</button>
                   </div>
                 </td>
               </tr>

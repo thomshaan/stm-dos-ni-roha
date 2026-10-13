@@ -3,7 +3,10 @@ const { Icon, BarChart, LineChart, DonutChart, Avatar } = window;
 
 function Dashboard({ setRoute, currency }) {
   const S = window.STM;
-  const TODAY = { tahun: 2026, bulan: 5 };
+  const now = new Date();
+  const TODAY = { tahun: now.getFullYear(), bulan: now.getMonth() + 1 };
+  const previousDate = new Date(TODAY.tahun, TODAY.bulan - 2, 1);
+  const previousPeriod = { tahun: previousDate.getFullYear(), bulan: previousDate.getMonth() + 1 };
   const fmt = (v) => S.formatCurrency(v, currency);
   const fmtCompact = (v) => S.formatCurrencyCompact(v, currency);
 
@@ -12,7 +15,7 @@ function Dashboard({ setRoute, currency }) {
 
   const bulanIni = S.pembayaranBulan(TODAY.bulan, TODAY.tahun);
   const totalBulanIni = bulanIni.reduce((s,p) => s + p.nominal, 0);
-  const bulanLalu = S.pembayaranBulan(TODAY.bulan - 1, TODAY.tahun);
+  const bulanLalu = S.pembayaranBulan(previousPeriod.bulan, previousPeriod.tahun);
   const totalBulanLalu = bulanLalu.reduce((s,p) => s + p.nominal, 0);
   const growth = totalBulanLalu === 0 ? 0 : ((totalBulanIni - totalBulanLalu) / totalBulanLalu) * 100;
 
@@ -81,7 +84,7 @@ function Dashboard({ setRoute, currency }) {
 
         <div className="card stat">
           <div className="stat-hd">
-            <div className="stat-lbl">Setoran Mei 2026</div>
+            <div className="stat-lbl">Setoran {S.BULAN_ID_FULL[TODAY.bulan-1]} {TODAY.tahun}</div>
             <div className="stat-ico"><Icon name="trending" size={16}/></div>
           </div>
           <div className="stat-val">{fmtCompact(totalBulanIni)}</div>
@@ -90,7 +93,7 @@ function Dashboard({ setRoute, currency }) {
               <Icon name={growth >= 0 ? "arrowUp" : "arrowDown"} size={10}/>
               {Math.abs(growth).toFixed(1)}%
             </span>
-            <span>vs April · {anggotaSetorBulanIni} anggota</span>
+            <span>vs {S.BULAN_ID_FULL[previousPeriod.bulan-1]} · {anggotaSetorBulanIni} anggota</span>
           </div>
         </div>
 
@@ -126,7 +129,7 @@ function Dashboard({ setRoute, currency }) {
         <div className="card">
           <div className="card-hd">
             <div>
-              <h3>Perubahan Saldo per Jenis · Mei</h3>
+              <h3>Perubahan Saldo per Jenis · {S.BULAN_ID_FULL[TODAY.bulan-1]}</h3>
               <div className="muted" style={{fontSize:12}}>Breakdown kategori tabungan</div>
             </div>
           </div>

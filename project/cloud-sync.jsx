@@ -397,24 +397,13 @@ const { Icon } = window;
 })();
 function CloudSettings() {
   const S = window.STMCloudSync;
-  const [clientId, setClientId] = React.useState(S.readConfig().clientId || "");
-  const [spreadsheetId, setSpreadsheetId] = React.useState(S.readConfig().spreadsheetId || "");
-  const [spreadsheetUrl, setSpreadsheetUrl] = React.useState(S.readConfig().spreadsheetUrl || "");
-  const [gasUrl, setGasUrl] = React.useState(S.readConfig().gasUrl || "");
-  const [gasPin, setGasPin] = React.useState(S.readConfig().gasPin || "");
-  const [status, setStatus] = React.useState({ status: "idle", message: "Belum terhubung. Data tetap disimpan di browser sampai sinkronisasi diaktifkan." });
+  const [status, setStatus] = React.useState({ status: "idle", message: "Sinkronisasi keluarga siap digunakan." });
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   React.useEffect(() => {
     const handler = (event) => {
       const detail = event.detail || {};
       setStatus({ status: detail.status || "idle", message: detail.message || "" });
-      if (detail.config) {
-        setSpreadsheetId(detail.config.spreadsheetId || "");
-        setSpreadsheetUrl(detail.config.spreadsheetUrl || "");
-        setGasUrl(detail.config.gasUrl || "");
-        setGasPin(detail.config.gasPin || "");
-      }
     };
     window.addEventListener("stm:cloud-status", handler);
     return () => window.removeEventListener("stm:cloud-status", handler);
@@ -425,66 +414,31 @@ function CloudSettings() {
     catch (e) { setError(e.message || String(e)); }
     finally { setBusy(false); }
   };
-  const saveSettings = () => {
-    const id = clientId.trim();
-    if (!id.endsWith(".apps.googleusercontent.com")) {
-      setError("OAuth Client ID belum valid. Biasanya berakhir dengan .apps.googleusercontent.com");
-      return false;
-    }
-    const next = S.writeConfig({ clientId: id, spreadsheetId: spreadsheetId.trim(), spreadsheetUrl });
-    setClientId(next.clientId);
-    setError("");
-    setStatus({ status: "idle", message: "Pengaturan disimpan pada browser ini." });
-    return true;
-  };
-  const badge = status.status === "saved" ? "Tersimpan" : status.status === "syncing" || status.status === "working" ? "Sedang bekerja" : status.status === "connected" ? "Terhubung" : status.status === "error" ? "Perlu perhatian" : "Belum aktif";
-  const badgeClass = status.status === "saved" ? "badge-green" : status.status === "error" ? "badge-red" : "badge-neutral";
+  const badge = status.status === "saved" ? "Tersimpan" : status.status === "syncing" || status.status === "working" ? "Sedang bekerja" : status.status === "connected" ? "Terhubung" : status.status === "error" ? "Perlu perhatian" : "Siap";
+  const badgeClass = status.status === "saved" || status.status === "connected" ? "badge-green" : status.status === "error" ? "badge-red" : "badge-neutral";
+  const config = S.readConfig();
   return (
     <div className="grid" style={{gap:16}}>
       <div className="card card-pad">
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
           <div className="stat-ico"><Icon name="settings" size={17}/></div>
-          <div><h3 style={{margin:0}}>Penyimpanan Google Sheets</h3><div className="muted" style={{fontSize:12}}>Database online pribadi untuk STM Dos Ni Roha</div></div>
+          <div><h3 style={{margin:0}}>Sinkronisasi Keluarga</h3><div className="muted" style={{fontSize:12}}>Database bersama melalui Google Sheets</div></div>
         </div>
-        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Website ini tetap berjalan di GitHub Pages. Setelah Google OAuth diatur dan kamu menghubungkan akun, data keluarga, jenis tabungan, transaksi, pengguna, dan aktivitas akan disimpan ke spreadsheet milik akun Google kamu.</p>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:12}}>
+        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Data keluarga, jenis tabungan, transaksi, pengguna, dan aktivitas disimpan di database bersama. Perangkat keluarga tidak perlu login Google satu per satu; sinkronisasi dimulai otomatis saat website dibuka.</p>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:14}}>
           <span className={"badge " + badgeClass}>{badge}</span><span className="muted" style={{fontSize:12}}>{status.message}</span>
         </div>
         <div className="grid grid-2" style={{gap:12}}>
-          <div className="field"><label>Google OAuth Client ID</label><input className="input" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="123456789-abc.apps.googleusercontent.com"/><div className="hint">Public client ID saja — jangan masukkan client secret.</div></div>
-          <div className="field"><label>Spreadsheet ID (otomatis setelah dibuat)</label><input className="input" value={spreadsheetId} onChange={e=>setSpreadsheetId(e.target.value)} placeholder="Dibuat dari tombol di bawah" /></div>
+          <div className="field"><label>Status endpoint</label><input className="input" value={config.backendReady ? "Dikonfigurasi otomatis" : "Belum siap"} readOnly/></div>
+          <div className="field"><label>Web App</label><input className="input" value="Google Apps Script (/exec)" readOnly/></div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
-          <button className="btn btn-sec" disabled={busy} onClick={saveSettings}><Icon name="check" size={14}/> Simpan Pengaturan</button>
-          <button className="btn btn-primary" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); await S.connect(); })}> <Icon name="user" size={14}/> Hubungkan Google</button>
-          <button className="btn btn-sec" disabled={busy || !clientId.trim()} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); if (!S.isConnected()) await S.authorize(); const created=await S.createSpreadsheet(); setSpreadsheetId(created.spreadsheetId); setSpreadsheetUrl(created.spreadsheetUrl || ""); })}><Icon name="plus" size={14}/> Buat Spreadsheet di Drive</button>
-        </div>
-        {spreadsheetUrl && <p style={{fontSize:13,marginTop:12}}><a href={spreadsheetUrl} target="_blank" rel="noreferrer">Buka database STM di Google Sheets ↗</a></p>}
-      </div>
-      <div className="card card-pad">
-        <h3 style={{marginTop:0}}>Sinkronisasi data</h3>
-        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Pilih sumber data awal dengan sengaja. “Muat dari Google Sheets” mengganti data browser ini dengan data cloud. “Upload data perangkat ini” mengganti isi spreadsheet dengan data browser ini. Setelah pilihan pertama berhasil, perubahan berikutnya otomatis disinkronkan saat tersambung.</p>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          <button className="btn btn-primary" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); await S.loadAll(); })}><Icon name="download" size={14}/> Muat dari Google Sheets</button>
-          <button className="btn btn-sec" disabled={busy || !spreadsheetId || !clientId} onClick={()=>run(async()=>{ if (!saveSettings()) throw new Error("Periksa OAuth Client ID terlebih dahulu."); await S.uploadLocal(); })}><Icon name="file_excel" size={14}/> Upload data perangkat ini</button>
-        </div>
-        {error && <div className="badge badge-red" style={{marginTop:12,whiteSpace:"normal"}}>{error}</div>}
-        <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Catatan keamanan: akses memakai Google OAuth dan scope <code>drive.file</code> agar aplikasi hanya mendapat akses ke file Drive yang dibuat/dibuka lewat aplikasi ini. Access token tidak disimpan permanen di browser. Tetap ekspor CSV sebagai cadangan.</div>
-      </div>
-      <div className="card card-pad">
-        <h3 style={{marginTop:0}}>Automatic family sync (tanpa Google login di setiap HP)</h3>
-        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Backend Google Apps Script keluarga sudah dikonfigurasi otomatis. Tidak perlu memasukkan URL, kode akses, OAuth Client ID, atau login Google pada tiap perangkat. Data cloud akan dimuat otomatis saat aplikasi dibuka.</p>
-        <div className="grid grid-2" style={{gap:12}}>
-          <div className="field"><label>Apps Script Web App URL (/exec)</label><input className="input" value={gasUrl} readOnly/><div className="hint">Dikonfigurasi otomatis untuk semua perangkat.</div></div>
-          <div className="field"><label>Kode akses keluarga</label><input className="input" type="password" value={gasPin} readOnly/><div className="hint">Dikonfigurasi otomatis di aplikasi.</div></div>
-        </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
-          <button className="btn btn-sec" disabled={busy} onClick={()=>run(async()=>{ const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasTest(); })}><Icon name="check" size={14}/> Test connection</button>
-          <button className="btn btn-primary" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasLoadAll(); })}><Icon name="download" size={14}/> Load cloud data</button>
-          <button className="btn btn-sec" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ if(!window.confirm("Upload akan mengganti seluruh data pada lima tab Google Sheets dengan data perangkat ini. Pastikan perangkat ini berisi data yang benar dan sudah ada backup. Lanjutkan?")) return; const cfg=S.readConfig(); S.writeConfig({gasUrl:cfg.gasUrl,gasPin:cfg.gasPin,backendReady:true}); await S.gasUploadLocal(); })}><Icon name="file_excel" size={14}/> Upload this device</button>
+          <button className="btn btn-sec" disabled={busy} onClick={()=>run(()=>S.gasTest())}><Icon name="check" size={14}/> Test connection</button>
+          <button className="btn btn-primary" disabled={busy} onClick={()=>run(()=>S.gasLoadAll())}><Icon name="download" size={14}/> Muat ulang data cloud</button>
+          <button className="btn btn-sec" disabled={busy} onClick={()=>run(async()=>{if(!window.confirm("Upload akan mengganti seluruh data pada lima tab Google Sheets dengan data perangkat ini. Pastikan data perangkat ini benar dan sudah ada backup. Lanjutkan?"))return;await S.gasUploadLocal();})}><Icon name="file_excel" size={14}/> Upload perangkat ini</button>
         </div>
         {error && <div className="badge badge-red" role="alert" style={{marginTop:12,whiteSpace:"normal",lineHeight:1.6}}>{error}</div>}
-        <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Peringatan: siapa pun yang memiliki URL deployment dan passphrase dapat membaca/mengubah data. Bagikan passphrase hanya kepada keluarga yang dipercaya. Sinkronisasi otomatis memakai strategi last-write-wins; hindari mengedit dari dua perangkat pada saat yang sama. Ekspor CSV sebagai backup.</div>
+        <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Catatan: sinkronisasi otomatis memakai strategi last-write-wins. Hindari mengedit dari dua perangkat pada saat yang sama dan ekspor CSV secara berkala sebagai cadangan.</div>
         <p style={{fontSize:13,marginTop:10}}><a href="https://github.com/thomshaan/stm-dos-ni-roha/blob/main/APPS-SCRIPT-FAMILY-SYNC.md" target="_blank" rel="noreferrer">Buka panduan setup Apps Script ↗</a></p>
       </div>
     </div>
