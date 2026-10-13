@@ -15,6 +15,114 @@ const { Icon } = window;
   let saveTimer = null;
   let syncing = false;
   let queued = false;
+  let gasFrame = null;
+  let gasFrameReady = null;
+  let gasSaving = false;
+  let gasQueued = false;
+  const gasPending = new Map();
+
+  function gasConfig() {
+    const config = readConfig();
+    if (!config.gasUrl || !config.gasPin) throw new Error("Masukkan URL Apps Script dan kode akses keluarga.");
+    let url;
+    try { url = new URL(config.gasUrl); } catch (_) { throw new Error("URL Apps Script tidak valid."); }
+    if (url.protocol !== "https:" || url.hostname !== "script.google.com" || !url.pathname.includes("/macros/s/") || !url.pathname.endsWith("/exec")) {
+      throw new Error("Gunakan URL deployment Google Apps Script yang berakhir dengan /exec.");
+    }
+    return config;
+  }
+  function ensureGasFrame() {
+    const config = gasConfig();
+    if (gasFrame && gasFrame.src === config.gasUrl && gasFrameReady) return gasFrameReady;
+    if (gasFrame) gasFrame.remove();
+    gasFrame = document.createElement("iframe");
+    gasFrame.title = "STM Dos Ni Roha secure sync bridge";
+    gasFrame.setAttribute("aria-hidden", "true");
+    gasFrame.style.cssText = "position:fixed;width:1px;height:1px;left:-10px;bottom:-10px;border:0;opacity:0;pointer-events:none";
+    gasFrameReady = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Apps Script bridge tidak merespons. Periksa URL deployment dan akses Anyone.")), 20000);
+      gasFrame.addEventListener("load", () => { clearTimeout(timeout); resolve(); }, { once: true });
+      gasFrame.addEventListener("error", () => { clearTimeout(timeout); reject(new Error("Gagal memuat Apps Script bridge.")); }, { once: true });
+    });
+    gasFrame.src = config.gasUrl;
+    document.body.appendChild(gasFrame);
+    return gasFrameReady;
+  }
+  window.addEventListener("message", event => {
+    if (!gasFrame || event.source !== gasFrame.contentWindow) return;
+    const message = event.data || {};
+    if (message.type !== "stm-gas-response" || !gasPending.has(message.id)) return;
+    const pending = gasPending.get(message.id);
+    gasPending.delete(message.id);
+    clearTimeout(pending.timeout);
+    if (message.ok) pending.resolve(message.result);
+    else pending.reject(new Error(message.error || "Permintaan Apps Script gagal."));
+  });
+  async function gasRequest(action, payload = {}) {
+    const config = gasConfig();
+    await ensureGasFrame();
+    return new Promise((resolve, reject) => {
+      const id = "gas-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      const timeout = setTimeout(() => {
+        gasPending.delete(id);
+        reject(new Error("Permintaan sinkronisasi melewati batas waktu. Periksa koneksi internet dan deployment Apps Script."));
+      }, 30000);
+      gasPending.set(id, { resolve, reject, timeout });
+      gasFrame.contentWindow.postMessage({
+        type: "stm-gas-request", id, action, passphrase: config.gasPin, payload
+      }, "*");
+    });
+  }
+  function currentDatasets() {
+    const S = window.STM;
+    return { KELUARGA:S.KELUARGA, JENIS_IURAN:S.JENIS_IURAN, PEMBAYARAN:S.PEMBAYARAN, USERS:S.USERS, AKTIVITAS:S.AKTIVITAS };
+  }
+  async function gasTest() {
+    const result = await gasRequest("ping");
+    if (!result || !result.ok) throw new Error("Apps Script tidak mengonfirmasi koneksi.");
+    emit("connected", "Apps Script terhubung. Kode akses keluarga diterima.");
+    return result;
+  }
+  async function gasLoadAll() {
+    emit("working", "Memuat data keluarga dari Google Sheets…");
+    const response = await gasRequest("getAll");
+    if (!response || !response.ok || !response.datasets) throw new Error("Backend tidak mengembalikan data yang valid.");
+    const S = window.STM;
+    for (const key of Object.keys(TAB_COLUMNS)) {
+      const rows = response.datasets[key];
+      if (!Array.isArray(rows)) throw new Error("Data tab tidak valid: " + key);
+      S[key].splice(0, S[key].length, ...rows);
+    }
+    writeConfig({ backendReady: true });
+    S.persistSTM({ skipCloud: true });
+    emit("saved", "Data terbaru berhasil dimuat. Sinkronisasi otomatis aktif pada perangkat ini.");
+    return response.datasets;
+  }
+  async function gasUploadLocal() {
+    emit("working", "Mengunggah data perangkat ke Google Sheets…");
+    const response = await gasRequest("replaceAll", { datasets: currentDatasets() });
+    if (!response || !response.ok) throw new Error("Backend gagal menyimpan data.");
+    writeConfig({ backendReady: true });
+    emit("saved", "Data perangkat berhasil diunggah. Sinkronisasi otomatis aktif.");
+    return response;
+  }
+  async function gasSaveAll() {
+    const config = readConfig();
+    if (!config.gasUrl || !config.gasPin || !config.backendReady) return;
+    if (gasSaving) { gasQueued = true; return; }
+    gasSaving = true;
+    emit("syncing", "Menyinkronkan perubahan ke Google Sheets…");
+    try {
+      await gasRequest("replaceAll", { datasets: currentDatasets() });
+      emit("saved", "Perubahan tersimpan di Google Sheets.");
+    } catch (error) {
+      emit("error", "Sinkronisasi Apps Script gagal: " + error.message);
+      throw error;
+    } finally {
+      gasSaving = false;
+      if (gasQueued) { gasQueued = false; gasSaveAll().catch(() => {}); }
+    }
+  }
 
   function readConfig() {
     try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}"); }
@@ -193,7 +301,13 @@ const { Icon } = window;
     catch (error) { setReady(false); throw error; }
   }
   function scheduleSave() {
-    if (!accessToken || !readConfig().spreadsheetId || !isReady()) return;
+    const config = readConfig();
+    if (config.gasUrl && config.gasPin && config.backendReady) {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => gasSaveAll().catch(() => {}), 900);
+      return;
+    }
+    if (!accessToken || !config.spreadsheetId || !isReady()) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => saveAll().catch(() => {}), 900);
   }
@@ -206,7 +320,7 @@ const { Icon } = window;
       emit("connected", config.spreadsheetId ? "Terhubung. Pilih untuk memuat data cloud atau mengunggah data perangkat ini." : "Terhubung. Buat spreadsheet untuk mulai menyimpan data.");
     }
   }
-  window.STMCloudSync = { readConfig, writeConfig, authorize, connect, createSpreadsheet, loadAll, uploadLocal, scheduleSave, isConnected: () => !!accessToken, isReady };
+  window.STMCloudSync = { readConfig, writeConfig, authorize, connect, createSpreadsheet, loadAll, uploadLocal, scheduleSave, isConnected: () => !!accessToken, isReady, gasTest, gasLoadAll, gasUploadLocal };
   window.addEventListener("stm:data-updated", scheduleSave);
 })();
 function CloudSettings() {
@@ -214,6 +328,8 @@ function CloudSettings() {
   const [clientId, setClientId] = React.useState(S.readConfig().clientId || "");
   const [spreadsheetId, setSpreadsheetId] = React.useState(S.readConfig().spreadsheetId || "");
   const [spreadsheetUrl, setSpreadsheetUrl] = React.useState(S.readConfig().spreadsheetUrl || "");
+  const [gasUrl, setGasUrl] = React.useState(S.readConfig().gasUrl || "");
+  const [gasPin, setGasPin] = React.useState(S.readConfig().gasPin || "");
   const [status, setStatus] = React.useState({ status: "idle", message: "Belum terhubung. Data tetap disimpan di browser sampai sinkronisasi diaktifkan." });
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -224,6 +340,8 @@ function CloudSettings() {
       if (detail.config) {
         setSpreadsheetId(detail.config.spreadsheetId || "");
         setSpreadsheetUrl(detail.config.spreadsheetUrl || "");
+        setGasUrl(detail.config.gasUrl || "");
+        setGasPin(detail.config.gasPin || "");
       }
     };
     window.addEventListener("stm:cloud-status", handler);
@@ -280,6 +398,21 @@ function CloudSettings() {
         </div>
         {error && <div className="badge badge-red" style={{marginTop:12,whiteSpace:"normal"}}>{error}</div>}
         <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Catatan keamanan: akses memakai Google OAuth dan scope <code>drive.file</code> agar aplikasi hanya mendapat akses ke file Drive yang dibuat/dibuka lewat aplikasi ini. Access token tidak disimpan permanen di browser. Tetap ekspor CSV sebagai cadangan.</div>
+      </div>
+      <div className="card card-pad">
+        <h3 style={{marginTop:0}}>Automatic family sync (tanpa Google login di setiap HP)</h3>
+        <p className="muted" style={{fontSize:13,lineHeight:1.65}}>Gunakan backend Google Apps Script agar keluarga dapat membaca dan menyimpan data ke spreadsheet bersama tanpa memasukkan OAuth Client ID atau login Google pada tiap perangkat. Siapkan deployment Apps Script terlebih dahulu sesuai panduan setup.</p>
+        <div className="grid grid-2" style={{gap:12}}>
+          <div className="field"><label>Apps Script Web App URL (/exec)</label><input className="input" value={gasUrl} onChange={e=>setGasUrl(e.target.value)} placeholder="https://script.google.com/macros/s/.../exec" autoComplete="url"/><div className="hint">Gunakan URL deployment dari Apps Script, bukan URL editor.</div></div>
+          <div className="field"><label>Kode akses keluarga</label><input className="input" type="password" value={gasPin} onChange={e=>setGasPin(e.target.value)} placeholder="Masukkan passphrase keluarga" autoComplete="current-password"/><div className="hint">Disimpan pada browser perangkat ini agar sinkronisasi otomatis. Jangan gunakan PIN pendek.</div></div>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
+          <button className="btn btn-sec" disabled={busy} onClick={()=>run(async()=>{ if(!gasUrl.trim() || gasPin.length < 12) throw new Error("Masukkan URL Apps Script dan passphrase minimal 12 karakter (disarankan 20+)."); const u=new URL(gasUrl.trim()); if(u.protocol!=="https:" || u.hostname!=="script.google.com" || !u.pathname.includes("/macros/s/") || !u.pathname.endsWith("/exec")) throw new Error("URL harus berupa URL deployment Apps Script yang berakhir dengan /exec."); S.writeConfig({gasUrl:u.href,gasPin}); setGasUrl(u.href); await S.gasTest(); })}><Icon name="check" size={14}/> Test connection</button>
+          <button className="btn btn-primary" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ S.writeConfig({gasUrl:gasUrl.trim(),gasPin}); await S.gasLoadAll(); })}><Icon name="download" size={14}/> Load cloud data</button>
+          <button className="btn btn-sec" disabled={busy || !gasUrl.trim() || !gasPin} onClick={()=>run(async()=>{ if(!window.confirm("Upload akan mengganti seluruh data pada lima tab Google Sheets dengan data perangkat ini. Pastikan perangkat ini berisi data yang benar dan sudah ada backup. Lanjutkan?")) return; S.writeConfig({gasUrl:gasUrl.trim(),gasPin}); await S.gasUploadLocal(); })}><Icon name="file_excel" size={14}/> Upload this device</button>
+        </div>
+        <div style={{fontSize:12,color:"var(--muted)",marginTop:14,lineHeight:1.7}}>Peringatan: siapa pun yang memiliki URL deployment dan passphrase dapat membaca/mengubah data. Bagikan passphrase hanya kepada keluarga yang dipercaya. Sinkronisasi otomatis memakai strategi last-write-wins; hindari mengedit dari dua perangkat pada saat yang sama. Ekspor CSV sebagai backup.</div>
+        <p style={{fontSize:13,marginTop:10}}><a href="https://github.com/thomshaan/stm-dos-ni-roha/blob/main/APPS-SCRIPT-FAMILY-SYNC.md" target="_blank" rel="noreferrer">Buka panduan setup Apps Script ↗</a></p>
       </div>
     </div>
   );
