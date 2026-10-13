@@ -802,7 +802,7 @@ function RekapAkhir({ currency }) {
     <div className="pdf-report-footer">Catatan: Periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
     <div className="grid grid-3 rekap-akhir-summary">
       <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Setoran</div><div className="stat-ico green"><Icon name="chart" size={16}/></div></div><div className="stat-val" style={{color:"var(--success)",fontSize:22}}>{fmt(allDeposits)}</div><div className="stat-sub">Akumulasi seluruh setoran</div></div>
-      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Penarikan</div><div className="stat-ico"><Icon name="arrow_down_left" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">{withdrawalTransactions.length} transaksi penarikan · identitas dirahasiakan</div></div>
+      <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Total Penarikan</div><div className="stat-ico"><Icon name="minus" size={16}/></div></div><div className="stat-val" style={{color:"var(--danger)",fontSize:22}}>{fmt(allWithdrawals)}</div><div className="stat-sub">{withdrawalTransactions.length} transaksi penarikan · identitas dirahasiakan</div></div>
       <div className="card stat"><div className="stat-hd"><div className="stat-lbl">Saldo Bersih</div><div className="stat-ico"><Icon name="wallet" size={16}/></div></div><div className="stat-val" style={{color:netBalance<0?"var(--danger)":"var(--success)",fontSize:22}}>{fmt(netBalance)}</div><div className="stat-sub">Total setoran − total penarikan</div></div>
     </div>
     <div className="card">
