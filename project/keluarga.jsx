@@ -9,6 +9,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
   const perPage = 10;
   const [detail, setDetail] = React.useState(null);
   const [showAdd, setShowAdd] = React.useState(false);
+  const [dataVersion, setDataVersion] = React.useState(0);
   const [newFamily, setNewFamily] = React.useState({ kepala_keluarga: "", no_hp: "", tanggal_gabung: new Date().toISOString().slice(0,10), status: "aktif" });
   const fmt = (v) => S.formatCurrency(v, currency);
 
@@ -23,7 +24,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
       );
     }
     return arr;
-  }, [search, statusFilter]);
+  }, [search, statusFilter, dataVersion]);
 
   const withTotals = React.useMemo(() => filtered.map(k => ({
     ...k,
@@ -44,7 +45,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
   return (
     <>
       {showAdd && (
-        <Modal open={showAdd} onClose={() => setShowAdd(false)}>
+        <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Tambah Keluarga" width="560px">
           <div className="card-pad" style={{minWidth:320}}>
             <h3 style={{marginTop:0}}>Tambah Keluarga</h3>
             <form onSubmit={(e) => {
@@ -63,7 +64,7 @@ function Keluarga({ search, setSearch, currency, onAddPayment }) {
               setNewFamily({ kepala_keluarga: "", no_hp: "", tanggal_gabung: new Date().toISOString().slice(0,10), status: "aktif" });
               setShowAdd(false);
               setPage(1);
-              if (typeof window !== "undefined") window.dispatchEvent(new Event("stm-data-changed"));
+              setDataVersion(v => v + 1);
             }} style={{display:"grid",gap:12}}>
               <div className="field"><label>Nama kepala keluarga *</label><input className="input" required maxLength={120} value={newFamily.kepala_keluarga} onChange={e => setNewFamily(v => ({...v,kepala_keluarga:e.target.value}))}/></div>
               <div className="field"><label>Nomor HP</label><input className="input" inputMode="tel" maxLength={30} value={newFamily.no_hp} onChange={e => setNewFamily(v => ({...v,no_hp:e.target.value}))}/></div>
