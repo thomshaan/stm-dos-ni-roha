@@ -394,11 +394,10 @@ function PrintPreview({ currency }) {
           <div className="print-hd">
             <div>
               <h1>LAPORAN REKAP TABUNGAN</h1>
-              <h2>STM Dos Ni Roha · {S.BULAN_ID_FULL[bulan-1]} {tahun}</h2>
+              <h2>{S.BULAN_ID_FULL[bulan-1]} {tahun}</h2>
             </div>
             <div className="print-meta">
               <div>Dicetak: {new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</div>
-              <div>Oleh: Thomas</div>
               <div>Periode: {S.BULAN_ID_FULL[bulan-1]} {tahun}</div>
             </div>
           </div>
@@ -462,15 +461,7 @@ function PrintPreview({ currency }) {
           <div className="print-ft">
             <div>
               <div>Catatan:</div>
-              <div style={{marginTop:4,maxWidth:280,color:"#888"}}>Laporan ini dihasilkan otomatis oleh sistem tabungan STM Dos Ni Roha. Mohon konfirmasi nominal sebelum disahkan dalam rapat pengurus.</div>
-            </div>
-            <div className="print-sign">
-              <div>Mengetahui,</div>
-              <div className="line">Bendahara STM</div>
-            </div>
-            <div className="print-sign">
-              <div>Disusun oleh,</div>
-              <div className="line">Admin Sistem</div>
+              <div style={{marginTop:4,maxWidth:520,color:"#555"}}>Mohon periksa kembali nominal dan keterangan transaksi sebelum laporan disahkan.</div>
             </div>
           </div>
         </div>
